@@ -6,10 +6,13 @@ import Integration from "../models/Integration.js";
 
 
 const router = express.Router();
-const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET) {
-  throw new Error("JWT_SECRET is required");
-}
+const getJwtSecret = () => {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    throw new Error("JWT_SECRET is required");
+  }
+  return secret;
+};
 
 // ✅ Middleware to protect admin routes
 function verifyAdmin(req, res, next) {
@@ -19,7 +22,7 @@ function verifyAdmin(req, res, next) {
 
   const token = authHeader.split(" ")[1];
   try {
-    const decoded = jwt.verify(token, JWT_SECRET);
+    const decoded = jwt.verify(token, getJwtSecret());
     if (decoded.role !== "admin") {
       return res.status(403).json({ success: false, message: "Access denied" });
     }
