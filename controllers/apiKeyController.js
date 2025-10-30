@@ -4,7 +4,18 @@ import ApiKey from "../models/ApiKey.js";
 export const getAllKeys = async (req, res) => {
   try {
     const keys = await ApiKey.find();
-    res.json(keys);
+    const masked = keys.map((k) => ({
+      _id: k._id,
+      service: k.service,
+      provider: k.provider,
+      createdBy: k.createdBy,
+      createdAt: k.createdAt,
+      updatedAt: k.updatedAt,
+      keyMasked: typeof k.key === "string" && k.key.length > 8
+        ? `${k.key.slice(0, 4)}****${k.key.slice(-4)}`
+        : "****",
+    }));
+    res.json({ success: true, keys: masked });
   } catch (error) {
     res.status(500).json({ message: "Failed to fetch API keys", error });
   }
@@ -20,7 +31,8 @@ export const createKey = async (req, res) => {
     const newKey = new ApiKey({ service, provider, key });
     await newKey.save();
 
-    res.status(201).json({ message: "API Key added successfully", newKey });
+    const keyMasked = key.length > 8 ? `${key.slice(0, 4)}****${key.slice(-4)}` : "****";
+    res.status(201).json({ message: "API Key added successfully", keyMasked });
   } catch (error) {
     res.status(500).json({ message: "Failed to create API key", error });
   }
@@ -32,7 +44,10 @@ export const updateKey = async (req, res) => {
     const { id } = req.params;
     const updated = await ApiKey.findByIdAndUpdate(id, req.body, { new: true });
     if (!updated) return res.status(404).json({ message: "Key not found" });
-    res.json({ message: "API Key updated successfully", updated });
+    const keyMasked = updated?.key && updated.key.length > 8
+      ? `${updated.key.slice(0, 4)}****${updated.key.slice(-4)}`
+      : "****";
+    res.json({ message: "API Key updated successfully", keyMasked });
   } catch (error) {
     res.status(500).json({ message: "Failed to update API key", error });
   }

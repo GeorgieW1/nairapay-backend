@@ -6,7 +6,10 @@ import Integration from "../models/Integration.js";
 
 
 const router = express.Router();
-const JWT_SECRET = process.env.JWT_SECRET || "supersecretkey";
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  throw new Error("JWT_SECRET is required");
+}
 
 // ✅ Middleware to protect admin routes
 function verifyAdmin(req, res, next) {
@@ -44,7 +47,8 @@ router.post("/api-keys", verifyAdmin, async (req, res) => {
     const { service, provider, key, createdBy } = req.body;
     const newKey = new ApiKey({ service, provider, key, createdBy });
     await newKey.save();
-    res.json({ success: true, message: "API Key added successfully", newKey });
+    const keyMasked = key && key.length > 8 ? `${key.slice(0,4)}****${key.slice(-4)}` : "****";
+    res.json({ success: true, message: "API Key added successfully", keyMasked });
   } catch (error) {
     console.error("Error adding key:", error);
     res.status(500).json({ success: false, message: "Failed to add key" });
@@ -55,7 +59,16 @@ router.post("/api-keys", verifyAdmin, async (req, res) => {
 router.get("/api-keys", verifyAdmin, async (req, res) => {
   try {
     const keys = await ApiKey.find().sort({ createdAt: -1 });
-    res.json({ success: true, keys });
+    const masked = keys.map(k => ({
+      _id: k._id,
+      service: k.service,
+      provider: k.provider,
+      createdBy: k.createdBy,
+      createdAt: k.createdAt,
+      updatedAt: k.updatedAt,
+      keyMasked: typeof k.key === "string" && k.key.length > 8 ? `${k.key.slice(0,4)}****${k.key.slice(-4)}` : "****",
+    }));
+    res.json({ success: true, keys: masked });
   } catch (error) {
     console.error("Error fetching keys:", error);
     res.status(500).json({ success: false, message: "Failed to load keys" });
@@ -103,7 +116,25 @@ router.post("/integrations", verifyAdmin, async (req, res) => {
 router.get("/integrations", verifyAdmin, async (req, res) => {
   try {
     const integrations = await Integration.find().sort({ createdAt: -1 });
-    res.json({ success: true, integrations });
+    const masked = integrations.map((i) => ({
+      _id: i._id,
+      providerName: i.providerName,
+      category: i.category,
+      baseUrl: i.baseUrl,
+      mode: i.mode,
+      createdBy: i.createdBy,
+      createdAt: i.createdAt,
+      updatedAt: i.updatedAt,
+      credentials: Array.isArray(i.credentials)
+        ? i.credentials.map((c) => ({
+            label: c.label,
+            valueMasked: typeof c.value === "string" && c.value.length > 8
+              ? `${c.value.slice(0, 4)}****${c.value.slice(-4)}`
+              : "****",
+          }))
+        : [],
+    }));
+    res.json({ success: true, integrations: masked });
   } catch (err) {
     res.status(500).json({ success: false, message: "Failed to load integrations" });
   }

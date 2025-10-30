@@ -1,12 +1,16 @@
 import express from "express";
 import Integration from "../models/Integration.js";
 import fetch from "node-fetch";
+import { verifyToken, requireRole } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// 🧪 Test Airtime Purchase
-router.post("/airtime/test", async (req, res) => {
+// 🧪 Test Airtime Purchase (admin only, disabled in production)
+router.post("/airtime/test", verifyToken, requireRole("admin"), async (req, res) => {
   try {
+    if (process.env.NODE_ENV === "production") {
+      return res.status(404).json({ success: false, message: "Not found" });
+    }
     // 1️⃣ Get integration credentials from DB
     const vtpass = await Integration.findOne({ providerName: "VTpass", mode: "sandbox" });
     if (!vtpass) {
@@ -43,7 +47,6 @@ router.post("/airtime/test", async (req, res) => {
     });
 
     const data = await response.json();
-    console.log("VTpass Sandbox Response:", data);
 
     res.json({
       success: true,
@@ -51,7 +54,7 @@ router.post("/airtime/test", async (req, res) => {
       vtpassResponse: data,
     });
   } catch (error) {
-    console.error("VTpass Test Error:", error);
+    console.error("VTpass Test Error");
     res.status(500).json({ success: false, message: "Error testing VTpass sandbox", error: error.message });
   }
 });

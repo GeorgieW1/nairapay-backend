@@ -1,6 +1,8 @@
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
 import admin from "firebase-admin";
 import connectDB from "./config/db.js";
 import fs from "fs";
@@ -14,9 +16,24 @@ import adminRoutes from "./routes/adminRoutes.js";
 dotenv.config();
 
 const app = express();
-app.use(cors());
+// Security headers
+app.use(helmet());
+
+// CORS - restrict to configured frontend
+const allowedOrigin = process.env.FRONTEND_ORIGIN || "*";
+app.use(cors({ origin: allowedOrigin, credentials: true }));
+
 app.use(express.json());
-app.use("/api/vtpass", vtpassRoutes);
+
+// Auth limiter
+const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 100 });
+app.use("/api/auth", authLimiter);
+
+// Sensitive routes limiter
+const sensitiveLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 200 });
+app.use("/api/api-keys", sensitiveLimiter);
+app.use("/api/vtpass", sensitiveLimiter);
+app.use("/api/admin", sensitiveLimiter);
 
 // ✅ Paths setup
 const __filename = fileURLToPath(import.meta.url);
@@ -54,6 +71,10 @@ app.set("firebaseAdmin", admin);
 
 // ✅ MongoDB connect and server start
 const PORT = process.env.PORT || 5000;
+if (!process.env.JWT_SECRET) {
+  console.error("JWT_SECRET is required");
+  process.exit(1);
+}
 
 const startServer = async () => {
   try {
@@ -72,10 +93,14 @@ const startServer = async () => {
       res.sendFile(path.join(__dirname, "views", "dashboard.html"));
     });
 
+    // Health
+    app.get("/healthz", (req, res) => res.json({ status: "ok" }));
+
     // ✅ API Routes
     app.use("/api/auth", authRoutes);
     app.use("/api/admin", adminRoutes); // ✅ place here (after authRoutes)
     app.use("/api/api-keys", apiKeysRoutes);
+    app.use("/api/vtpass", vtpassRoutes);
 
 
     app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

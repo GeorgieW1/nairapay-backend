@@ -3,7 +3,10 @@ import bcrypt from "bcryptjs";
 import User from "../models/User.js";
 import admin from "firebase-admin"; // now available from your server.js initialization
 
-const JWT_SECRET = process.env.JWT_SECRET || "supersecretkey";
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  throw new Error("JWT_SECRET is required");
+}
 
 /**
  * 🔹 Manual Registration (optional)
