@@ -3,10 +3,13 @@ import bcrypt from "bcryptjs";
 import User from "../models/User.js";
 import admin from "firebase-admin"; // now available from your server.js initialization
 
-const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET) {
-  throw new Error("JWT_SECRET is required");
-}
+const getJwtSecret = () => {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    throw new Error("JWT_SECRET is required");
+  }
+  return secret;
+};
 
 /**
  * 🔹 Manual Registration (optional)
@@ -44,7 +47,7 @@ export const login = async (req, res) => {
 
     const token = jwt.sign(
       { id: user._id, role: user.role || "user" },
-      JWT_SECRET,
+      getJwtSecret(),
       { expiresIn: "7d" }
     );
 
@@ -88,7 +91,7 @@ export const firebaseLogin = async (req, res) => {
         role: user.role,
         walletId: user.walletId || null,
       },
-      JWT_SECRET,
+      getJwtSecret(),
       { expiresIn: "7d" }
     );
 
@@ -112,7 +115,7 @@ export const verifyToken = async (req, res) => {
     }
 
     const token = authHeader.split(" ")[1]; // Get the token from "Bearer <token>"
-    const decoded = jwt.verify(token, JWT_SECRET);
+    const decoded = jwt.verify(token, getJwtSecret());
 
     const user = await User.findById(decoded.id).select("-password");
     if (!user) {
