@@ -1,0 +1,47 @@
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  display: flex;
+  background-color: #f4f6f9;
+}
+
+.sidebar {
+  width: 220px;
+  background-color: #40376E;
+  color: #fff;
+  height: 100vh;
+  padding: 20px;
+}
+
+.sidebar h2 {
+  text-align: center;
+}
+
+.sidebar ul {
+  list-style: none;
+  padding: 0;
+}
+
+.sidebar ul li {
+  margin: 20px 0;
+}
+
+.sidebar ul li a {
+  color: #fff;
+  text-decoration: none;
+  display: block;
+}
+
+.main {
+  flex: 1;
+  padding: 20px;
+}
+
+button {
+  background-color: #40376E;
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  cursor: pointer;
+  border-radius: 5px;
+}
