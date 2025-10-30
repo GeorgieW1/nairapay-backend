@@ -104,7 +104,15 @@ const startServer = async () => {
     app.use(express.static(path.join(__dirname, "public")));
 
     // ✅ Serve HTML views
+    app.get("/", (req, res) => {
+      res.redirect("/admin");
+    });
+
     app.get("/admin", (req, res) => {
+      res.sendFile(path.join(__dirname, "views", "login.html"));
+    });
+
+    app.get("/admin/login", (req, res) => {
       res.sendFile(path.join(__dirname, "views", "login.html"));
     });
 
