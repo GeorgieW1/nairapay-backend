@@ -45,3 +45,95 @@ button {
   cursor: pointer;
   border-radius: 5px;
 }
+
+/* ===== Login Page ===== */
+.login-container {
+  margin: auto;
+  width: 100%;
+  max-width: 380px;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+  padding: 32px 28px;
+  text-align: center;
+}
+
+.login-brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.login-brand .logo {
+  width: 36px;
+  height: 36px;
+  background: #40376E;
+  border-radius: 8px;
+}
+
+.login-title {
+  margin: 0;
+  color: #1f2340;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.login-subtitle {
+  margin: 4px 0 18px;
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.form-group {
+  text-align: left;
+  margin-bottom: 14px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 6px;
+  color: #374151;
+  font-size: 13px;
+}
+
+.form-control {
+  width: 100%;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color .2s ease;
+}
+
+.form-control:focus {
+  border-color: #40376E;
+}
+
+.btn-primary {
+  width: 100%;
+  padding: 12px 14px;
+  background: #40376E;
+  border-radius: 8px;
+  color: #fff;
+  font-weight: 600;
+}
+
+.help-text {
+  margin-top: 12px;
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.error-banner {
+  display: none;
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  margin-bottom: 12px;
+}

@@ -8,14 +8,51 @@
 </head>
 <body>
   <div class="login-container">
-    <h1>NairaPay Admin</h1>
+    <div class="login-brand">
+      <div class="logo"></div>
+      <h1 class="login-title">NairaPay Admin</h1>
+    </div>
+    <p class="login-subtitle">Sign in to manage services and transactions</p>
+
+    <div id="errorBanner" class="error-banner"></div>
+
     <form id="loginForm">
-      <input type="email" id="email" placeholder="Email" required />
-      <input type="password" id="password" placeholder="Password" required />
-      <button type="submit">Login</button>
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input class="form-control" type="email" id="email" placeholder="you@company.com" required />
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input class="form-control" type="password" id="password" placeholder="••••••••" required />
+      </div>
+      <button class="btn-primary" type="submit">Sign in</button>
     </form>
+
+    <p class="help-text">Forgot admin access? See notes below.</p>
   </div>
 
   <script src="/index.js"></script>
+  <script>
+    // Optional UX: Show errors inline instead of alert
+    document.addEventListener('DOMContentLoaded', () => {
+      const form = document.getElementById('loginForm');
+      const banner = document.getElementById('errorBanner');
+      if (!form) return;
+
+      form.addEventListener('submit', async (e) => {
+        banner.style.display = 'none';
+        banner.textContent = '';
+        // Let /public/index.js perform the actual fetch
+        // We just wait a tick and if localStorage didn't get a token, show error
+        setTimeout(() => {
+          const token = localStorage.getItem('token');
+          if (!token) {
+            banner.textContent = 'Invalid credentials. Please try again.';
+            banner.style.display = 'block';
+          }
+        }, 800);
+      });
+    });
+  </script>
 </body>
 </html>
