@@ -54,8 +54,8 @@ router.post("/airtime/test", verifyToken, requireRole("admin"), async (req, res)
       vtpassResponse: data,
     });
   } catch (error) {
-    console.error("VTpass Test Error");
-    res.status(500).json({ success: false, message: "Error testing VTpass sandbox", error: error.message });
+    if (req.log) req.log.error({ err: error }, "VTpass Test Error");
+    res.status(500).json({ success: false, message: "Error testing VTpass sandbox" });
   }
 });
 

@@ -17,7 +17,8 @@ export const getAllKeys = async (req, res) => {
     }));
     res.json({ success: true, keys: masked });
   } catch (error) {
-    res.status(500).json({ message: "Failed to fetch API keys", error });
+    if (req.log) req.log.error({ err: error }, "Failed to fetch API keys");
+    res.status(500).json({ message: "Failed to fetch API keys" });
   }
 };
 
@@ -34,7 +35,8 @@ export const createKey = async (req, res) => {
     const keyMasked = key.length > 8 ? `${key.slice(0, 4)}****${key.slice(-4)}` : "****";
     res.status(201).json({ message: "API Key added successfully", keyMasked });
   } catch (error) {
-    res.status(500).json({ message: "Failed to create API key", error });
+    if (req.log) req.log.error({ err: error }, "Failed to create API key");
+    res.status(500).json({ message: "Failed to create API key" });
   }
 };
 
@@ -49,7 +51,8 @@ export const updateKey = async (req, res) => {
       : "****";
     res.json({ message: "API Key updated successfully", keyMasked });
   } catch (error) {
-    res.status(500).json({ message: "Failed to update API key", error });
+    if (req.log) req.log.error({ err: error }, "Failed to update API key");
+    res.status(500).json({ message: "Failed to update API key" });
   }
 };
 
@@ -61,6 +64,7 @@ export const deleteKey = async (req, res) => {
     if (!deleted) return res.status(404).json({ message: "Key not found" });
     res.json({ message: "API Key deleted successfully" });
   } catch (error) {
-    res.status(500).json({ message: "Failed to delete API key", error });
+    if (req.log) req.log.error({ err: error }, "Failed to delete API key");
+    res.status(500).json({ message: "Failed to delete API key" });
   }
 };

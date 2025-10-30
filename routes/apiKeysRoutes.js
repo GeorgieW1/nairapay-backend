@@ -6,6 +6,8 @@ import {
   deleteKey,
 } from "../controllers/apiKeyController.js";
 import { verifyToken, requireRole } from "../middleware/authMiddleware.js";
+import { validate } from "../middleware/validate.js";
+import { createKeyValidator, updateKeyValidator, idParamValidator } from "../validators/apiKeyValidators.js";
 
 const router = express.Router();
 
@@ -13,8 +15,8 @@ const router = express.Router();
 router.use(verifyToken, requireRole("admin"));
 
 router.get("/", getAllKeys);
-router.post("/", createKey);
-router.put("/:id", updateKey);
-router.delete("/:id", deleteKey);
+router.post("/", createKeyValidator, validate, createKey);
+router.put("/:id", updateKeyValidator, validate, updateKey);
+router.delete("/:id", idParamValidator, validate, deleteKey);
 
 export default router;

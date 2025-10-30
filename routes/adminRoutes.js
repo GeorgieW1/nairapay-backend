@@ -36,7 +36,8 @@ router.get("/users", verifyAdmin, async (req, res) => {
     const users = await User.find().select("-password"); // exclude password
     res.json({ success: true, users });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    if (req.log) req.log.error({ err: error }, "Error fetching users");
+    res.status(500).json({ success: false, message: "Failed to fetch users" });
   }
 });
 
@@ -50,7 +51,7 @@ router.post("/api-keys", verifyAdmin, async (req, res) => {
     const keyMasked = key && key.length > 8 ? `${key.slice(0,4)}****${key.slice(-4)}` : "****";
     res.json({ success: true, message: "API Key added successfully", keyMasked });
   } catch (error) {
-    console.error("Error adding key:", error);
+    if (req.log) req.log.error({ err: error }, "Error adding key");
     res.status(500).json({ success: false, message: "Failed to add key" });
   }
 });
@@ -70,7 +71,7 @@ router.get("/api-keys", verifyAdmin, async (req, res) => {
     }));
     res.json({ success: true, keys: masked });
   } catch (error) {
-    console.error("Error fetching keys:", error);
+    if (req.log) req.log.error({ err: error }, "Error fetching keys");
     res.status(500).json({ success: false, message: "Failed to load keys" });
   }
 });
@@ -84,7 +85,7 @@ router.delete("/api-keys/:id", verifyAdmin, async (req, res) => {
     }
     res.json({ success: true, message: "API Key deleted successfully" });
   } catch (error) {
-    console.error("Error deleting key:", error);
+    if (req.log) req.log.error({ err: error }, "Error deleting key");
     res.status(500).json({ success: false, message: "Failed to delete key" });
   }
 });
@@ -107,7 +108,7 @@ router.post("/integrations", verifyAdmin, async (req, res) => {
     await integration.save();
     res.json({ success: true, message: "Integration added", integration });
   } catch (err) {
-    console.error(err);
+    if (req.log) req.log.error({ err }, "Failed to add integration");
     res.status(500).json({ success: false, message: "Failed to add integration" });
   }
 });
@@ -136,6 +137,7 @@ router.get("/integrations", verifyAdmin, async (req, res) => {
     }));
     res.json({ success: true, integrations: masked });
   } catch (err) {
+    if (req.log) req.log.error({ err }, "Failed to load integrations");
     res.status(500).json({ success: false, message: "Failed to load integrations" });
   }
 });
@@ -148,6 +150,7 @@ router.delete("/integrations/:id", verifyAdmin, async (req, res) => {
       return res.status(404).json({ success: false, message: "Integration not found" });
     res.json({ success: true, message: "Integration deleted" });
   } catch (err) {
+    if (req.log) req.log.error({ err }, "Failed to delete integration");
     res.status(500).json({ success: false, message: "Failed to delete integration" });
   }
 });

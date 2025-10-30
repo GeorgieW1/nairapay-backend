@@ -3,6 +3,8 @@ import dotenv from "dotenv";
 import cors from "cors";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
+import pinoHttp from "pino-http";
+import logger from "./utils/logger.js";
 import admin from "firebase-admin";
 import connectDB from "./config/db.js";
 import fs from "fs";
@@ -16,6 +18,23 @@ import adminRoutes from "./routes/adminRoutes.js";
 dotenv.config();
 
 const app = express();
+// Structured logging with redaction
+app.use(pinoHttp({
+	logger,
+	redact: {
+		paths: [
+			"req.headers.authorization",
+			"req.headers.cookie",
+			"req.body.password",
+			"req.body.key",
+			"req.body.secret",
+			"res.body.token",
+			"res.body.key",
+			"res.body.secret",
+		],
+		remove: true,
+	},
+}));
 // Security headers
 app.use(helmet());
 

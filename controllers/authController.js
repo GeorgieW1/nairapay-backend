@@ -98,7 +98,7 @@ export const firebaseLogin = async (req, res) => {
       user,
     });
   } catch (err) {
-    console.error("Firebase login error:", err);
+    if (req.log) req.log.error({ err }, "Firebase login error");
     res.status(401).json({ error: "Invalid or expired Firebase token" });
   }
 };
@@ -121,7 +121,7 @@ export const verifyToken = async (req, res) => {
 
     res.json({ success: true, user });
   } catch (error) {
-    console.error("Token verification failed:", error);
+    if (req.log) req.log.error({ err: error }, "Token verification failed");
     res.status(401).json({ success: false, message: "Invalid or expired token" });
   }
 };
