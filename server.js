@@ -14,6 +14,9 @@ import apiKeysRoutes from "./routes/apiKeysRoutes.js";
 import vtpassRoutes from "./routes/vtpassRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
+import walletRoutes from "./routes/walletRoutes.js";
+import transactionRoutes from "./routes/transactionRoutes.js";
+import serviceRoutes from "./routes/serviceRoutes.js";
 
 dotenv.config();
 
@@ -128,6 +131,9 @@ app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes); // ✅ place here (after authRoutes)
 app.use("/api/api-keys", apiKeysRoutes);
 app.use("/api/vtpass", vtpassRoutes);
+app.use("/api/wallet", walletRoutes);
+app.use("/api/transactions", transactionRoutes);
+app.use("/api/services", serviceRoutes);
 
 // Initialize server (for non-serverless deployments)
 const startServer = async () => {
