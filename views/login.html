@@ -32,27 +32,5 @@
   </div>
 
   <script src="/index.js"></script>
-  <script>
-    // Optional UX: Show errors inline instead of alert
-    document.addEventListener('DOMContentLoaded', () => {
-      const form = document.getElementById('loginForm');
-      const banner = document.getElementById('errorBanner');
-      if (!form) return;
-
-      form.addEventListener('submit', async (e) => {
-        banner.style.display = 'none';
-        banner.textContent = '';
-        // Let /public/index.js perform the actual fetch
-        // We just wait a tick and if localStorage didn't get a token, show error
-        setTimeout(() => {
-          const token = localStorage.getItem('token');
-          if (!token) {
-            banner.textContent = 'Invalid credentials. Please try again.';
-            banner.style.display = 'block';
-          }
-        }, 800);
-      });
-    });
-  </script>
 </body>
 </html>

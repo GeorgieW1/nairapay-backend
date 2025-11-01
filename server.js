@@ -95,46 +95,53 @@ if (!process.env.JWT_SECRET) {
   process.exit(1);
 }
 
+// ✅ Serve static admin panel
+app.use(express.static(path.join(__dirname, "public")));
+
+// ✅ Serve HTML views
+app.get("/", (req, res) => {
+  res.redirect("/admin");
+});
+
+app.get("/admin", (req, res) => {
+  res.sendFile(path.join(__dirname, "views", "login.html"));
+});
+
+app.get("/admin/login", (req, res) => {
+  res.sendFile(path.join(__dirname, "views", "login.html"));
+});
+
+app.get("/admin/dashboard", (req, res) => {
+  res.sendFile(path.join(__dirname, "views", "dashboard.html"));
+});
+
+// Health
+app.get("/healthz", (req, res) => res.json({ status: "ok" }));
+
+// ✅ API Routes
+app.use("/api/auth", authRoutes);
+app.use("/api/admin", adminRoutes); // ✅ place here (after authRoutes)
+app.use("/api/api-keys", apiKeysRoutes);
+app.use("/api/vtpass", vtpassRoutes);
+
+// Initialize server (for non-serverless deployments)
 const startServer = async () => {
   try {
     await connectDB();
     console.log("✅ MongoDB Connected Successfully");
 
-    // ✅ Serve static admin panel
-    app.use(express.static(path.join(__dirname, "public")));
-
-    // ✅ Serve HTML views
-    app.get("/", (req, res) => {
-      res.redirect("/admin");
-    });
-
-    app.get("/admin", (req, res) => {
-      res.sendFile(path.join(__dirname, "views", "login.html"));
-    });
-
-    app.get("/admin/login", (req, res) => {
-      res.sendFile(path.join(__dirname, "views", "login.html"));
-    });
-
-    app.get("/admin/dashboard", (req, res) => {
-      res.sendFile(path.join(__dirname, "views", "dashboard.html"));
-    });
-
-    // Health
-    app.get("/healthz", (req, res) => res.json({ status: "ok" }));
-
-    // ✅ API Routes
-    app.use("/api/auth", authRoutes);
-    app.use("/api/admin", adminRoutes); // ✅ place here (after authRoutes)
-    app.use("/api/api-keys", apiKeysRoutes);
-    app.use("/api/vtpass", vtpassRoutes);
-
-
-    app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+    // Only listen in non-Vercel environments
+    if (!process.env.VERCEL) {
+      app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+    }
   } catch (error) {
     console.error("❌ Failed to start server:", error.message);
     process.exit(1);
   }
 };
 
+// Start server (runs on Railway, Render, etc., but not Vercel)
 startServer();
+
+// Export for Vercel serverless
+export default app;

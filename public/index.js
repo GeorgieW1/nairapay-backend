@@ -1,25 +1,40 @@
 document.addEventListener("DOMContentLoaded", () => {
   console.log("✅ Admin panel script loaded");
 
+  // Auto-detect API base URL (works in both local and production)
+  const API_BASE = window.location.origin;
+
   // ===============================
   // 🔹 LOGIN PAGE HANDLER
   // ===============================
   const form = document.getElementById("loginForm");
+  const banner = document.getElementById("errorBanner");
 
   if (form) {
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
 
+      // Hide error banner
+      if (banner) {
+        banner.style.display = 'none';
+        banner.textContent = '';
+      }
+
       const email = document.getElementById("email").value.trim();
       const password = document.getElementById("password").value.trim();
 
       if (!email || !password) {
-        alert("Please enter both email and password");
+        if (banner) {
+          banner.textContent = 'Please enter both email and password';
+          banner.style.display = 'block';
+        } else {
+          alert("Please enter both email and password");
+        }
         return;
       }
 
       try {
-        const res = await fetch("/api/auth/login", {
+        const res = await fetch(`${API_BASE}/api/auth/login`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email, password }),
@@ -30,14 +45,28 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (data.success && data.token) {
           localStorage.setItem("token", data.token);
-          localStorage.setItem("adminName", data.user.name);
+          if (data.user && data.user.name) {
+            localStorage.setItem("adminName", data.user.name);
+          }
           window.location.href = "/admin/dashboard";
         } else {
-          alert(data.error || "Invalid login credentials");
+          const errorMsg = data.error || "Invalid login credentials";
+          if (banner) {
+            banner.textContent = errorMsg;
+            banner.style.display = 'block';
+          } else {
+            alert(errorMsg);
+          }
         }
       } catch (err) {
         console.error("❌ Login error:", err);
-        alert("Something went wrong, please try again later.");
+        const errorMsg = "Something went wrong, please try again later.";
+        if (banner) {
+          banner.textContent = errorMsg;
+          banner.style.display = 'block';
+        } else {
+          alert(errorMsg);
+        }
       }
     });
   }
@@ -58,7 +87,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // ✅ Verify token
-    fetch("/api/auth/verify-token", {
+    fetch(`${API_BASE}/api/auth/verify-token`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -107,7 +136,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         try {
-          const res = await fetch("/api/admin/users", {
+          const res = await fetch(`${API_BASE}/api/admin/users`, {
             method: "GET",
             headers: {
               "Content-Type": "application/json",
@@ -121,8 +150,8 @@ document.addEventListener("DOMContentLoaded", () => {
           if (data.success) {
             const list = data.users
               .map(
-                (u, i) =>
-                  `<tr>
+                (u, i) => `
+                  <tr>
                     <td>${i + 1}</td>
                     <td>${u.name}</td>
                     <td>${u.email}</td>

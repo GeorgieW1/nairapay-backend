@@ -39,11 +39,24 @@ export const register = async (req, res) => {
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
+    
+    if (!email || !password) {
+      return res.status(400).json({ success: false, error: "Email and password are required" });
+    }
+
     const user = await User.findOne({ email });
-    if (!user) return res.status(404).json({ error: "User not found" });
+    if (!user) {
+      return res.status(404).json({ success: false, error: "User not found" });
+    }
+
+    if (!user.password) {
+      return res.status(400).json({ success: false, error: "This account uses Firebase login. Please use Google sign-in." });
+    }
 
     const match = await bcrypt.compare(password, user.password);
-    if (!match) return res.status(400).json({ error: "Invalid password" });
+    if (!match) {
+      return res.status(400).json({ success: false, error: "Invalid password" });
+    }
 
     const token = jwt.sign(
       { id: user._id, role: user.role || "user" },
@@ -51,9 +64,10 @@ export const login = async (req, res) => {
       { expiresIn: "7d" }
     );
 
-    res.json({ success: true, token, user });
+    res.json({ success: true, token, user: { ...user.toObject(), password: undefined } });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    if (req.log) req.log.error({ err }, "Login error");
+    res.status(500).json({ success: false, error: err.message });
   }
 };
 
@@ -126,5 +140,105 @@ export const verifyToken = async (req, res) => {
   } catch (error) {
     if (req.log) req.log.error({ err: error }, "Token verification failed");
     res.status(401).json({ success: false, message: "Invalid or expired token" });
+  }
+};
+
+/**
+ * 🔹 Forgot Password - Generate reset token
+ */
+export const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({ success: false, error: "Email is required" });
+    }
+
+    const user = await User.findOne({ email });
+    // For security, don't reveal if user exists or not
+    if (!user) {
+      return res.json({ 
+        success: true, 
+        message: "If an account exists with this email, a password reset link has been sent." 
+      });
+    }
+
+    // Check if user has a password (not Firebase-only account)
+    if (!user.password) {
+      return res.status(400).json({ 
+        success: false, 
+        error: "This account uses Firebase login. Please use Google sign-in or reset password via Firebase." 
+      });
+    }
+
+    // Generate reset token (valid for 1 hour)
+    const resetToken = jwt.sign(
+      { id: user._id, type: "password-reset" },
+      getJwtSecret(),
+      { expiresIn: "1h" }
+    );
+
+    // In a real app, you'd send this token via email
+    // For now, we'll return it in the response (for development/testing)
+    // TODO: Implement email sending service
+    res.json({ 
+      success: true, 
+      message: "Password reset token generated",
+      resetToken, // Remove this in production - only return in email
+      note: "In production, this token should be sent via email"
+    });
+  } catch (err) {
+    if (req.log) req.log.error({ err }, "Forgot password error");
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
+/**
+ * 🔹 Reset Password - Use reset token to set new password
+ */
+export const resetPassword = async (req, res) => {
+  try {
+    const { resetToken, newPassword } = req.body;
+    
+    if (!resetToken || !newPassword) {
+      return res.status(400).json({ 
+        success: false, 
+        error: "Reset token and new password are required" 
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ 
+        success: false, 
+        error: "Password must be at least 6 characters" 
+      });
+    }
+
+    // Verify reset token
+    let decoded;
+    try {
+      decoded = jwt.verify(resetToken, getJwtSecret());
+      if (decoded.type !== "password-reset") {
+        return res.status(400).json({ success: false, error: "Invalid reset token" });
+      }
+    } catch (err) {
+      return res.status(400).json({ success: false, error: "Invalid or expired reset token" });
+    }
+
+    // Find user and update password
+    const user = await User.findById(decoded.id);
+    if (!user) {
+      return res.status(404).json({ success: false, error: "User not found" });
+    }
+
+    // Hash and save new password
+    const hashed = await bcrypt.hash(newPassword, 10);
+    user.password = hashed;
+    await user.save();
+
+    res.json({ success: true, message: "Password reset successfully" });
+  } catch (err) {
+    if (req.log) req.log.error({ err }, "Reset password error");
+    res.status(500).json({ success: false, error: err.message });
   }
 };

@@ -93,9 +93,6 @@ router.delete("/api-keys/:id", verifyAdmin, async (req, res) => {
   }
 });
 
-export default router;
-
-
 // ✅ Add new integration
 router.post("/integrations", verifyAdmin, async (req, res) => {
   try {
@@ -157,3 +154,5 @@ router.delete("/integrations/:id", verifyAdmin, async (req, res) => {
     res.status(500).json({ success: false, message: "Failed to delete integration" });
   }
 });
+
+export default router;

@@ -1,7 +1,7 @@
 import express from "express";
-import { register, login, firebaseLogin, verifyToken } from "../controllers/authController.js";
+import { register, login, firebaseLogin, verifyToken, forgotPassword, resetPassword } from "../controllers/authController.js";
 import { validate } from "../middleware/validate.js";
-import { registerValidator, loginValidator, firebaseLoginValidator } from "../validators/authValidators.js";
+import { registerValidator, loginValidator, firebaseLoginValidator, forgotPasswordValidator, resetPasswordValidator } from "../validators/authValidators.js";
 import User from "../models/User.js"; // 👈 ensure your User model is imported
 
 
@@ -11,6 +11,8 @@ router.post("/register", registerValidator, validate, register);        // Manua
 router.post("/login", loginValidator, validate, login);              // Manual login
 router.post("/firebase-login", firebaseLoginValidator, validate, firebaseLogin); // Firebase sign-in (Google, etc.)
 router.post("/verify-token", verifyToken); // Verify JWT token for admin dashboard
+router.post("/forgot-password", forgotPasswordValidator, validate, forgotPassword); // Request password reset
+router.post("/reset-password", resetPasswordValidator, validate, resetPassword); // Reset password with token
 
 // ✅ New route: Get all users
 router.get("/users", verifyToken, async (req, res) => {
