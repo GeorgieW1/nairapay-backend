@@ -77,6 +77,14 @@ export const login = async (req, res) => {
  */
 export const firebaseLogin = async (req, res) => {
   try {
+    // Check if Firebase is initialized
+    const firebaseInitialized = req.app.get("firebaseInitialized");
+    if (!firebaseInitialized) {
+      return res.status(503).json({ 
+        error: "Firebase authentication is not configured. Please use email/password login instead." 
+      });
+    }
+
     const { idToken } = req.body;
     if (!idToken) {
       return res.status(400).json({ error: "Firebase ID token is required" });
