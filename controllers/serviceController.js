@@ -2,6 +2,7 @@ import User from "../models/User.js";
 import Transaction from "../models/Transaction.js";
 import ApiKey from "../models/ApiKey.js";
 import Integration from "../models/Integration.js";
+import fetch from "node-fetch";
 
 /**
  * Buy Airtime
@@ -51,15 +52,6 @@ export const buyAirtime = async (req, res) => {
       });
     }
 
-    // Get API key for airtime
-    const apiKey = await ApiKey.findOne({ service: "airtime" });
-    if (!apiKey) {
-      return res.status(503).json({
-        success: false,
-        error: "Airtime API key not configured",
-      });
-    }
-
     // Create pending transaction
     const balanceBefore = user.walletBalance;
     const transaction = await Transaction.create({
@@ -77,36 +69,81 @@ export const buyAirtime = async (req, res) => {
     });
 
     try {
-      // Call VTpass API (you'll need to implement this based on VTpass docs)
-      // For now, simulating success
-      const vtpassResponse = {
-        code: "000",
-        message: "Airtime purchase successful",
+      // Map network to VTpass service ID
+      const serviceIDMap = {
+        "MTN": "mtn",
+        "Airtel": "airtel",
+        "Glo": "glo",
+        "9mobile": "9mobile"
+      };
+      
+      const serviceID = serviceIDMap[network] || network.toLowerCase();
+      const requestId = `${user._id}_${Date.now()}`;
+
+      // Call VTpass API
+      const vtpassPayload = {
+        request_id: requestId,
+        serviceID: serviceID,
+        amount: amount.toString(),
+        phone: phone
       };
 
-      // If successful, deduct from wallet
-      user.walletBalance = balanceBefore - amount;
-      await user.save();
+      // Get credentials
+      const apiKey = integration.credentials.find(c => 
+        c.label.toLowerCase().includes("api"))?.value;
+      const publicKey = integration.credentials.find(c => 
+        c.label.toLowerCase().includes("public"))?.value;
 
-      // Update transaction
-      transaction.status = "completed";
-      transaction.balanceAfter = user.walletBalance;
-      transaction.metadata.vtpassResponse = vtpassResponse;
-      await transaction.save();
-
-      res.json({
-        success: true,
-        message: "Airtime purchased successfully",
-        transaction: {
-          _id: transaction._id,
-          type: transaction.type,
-          amount: transaction.amount,
-          status: transaction.status,
-          phone,
-          network,
+      const vtpassResponse = await fetch(`${integration.baseUrl}/pay`, {
+        method: "POST",
+        headers: {
+          "api-key": apiKey || "",
+          "public-key": publicKey,
+          "Content-Type": "application/json",
         },
-        newBalance: user.walletBalance,
+        body: JSON.stringify(vtpassPayload),
       });
+
+      const vtpassData = await vtpassResponse.json();
+
+      // Check if VTpass purchase was successful
+      if (vtpassData.content && vtpassData.content.transactions) {
+        // If successful, deduct from wallet
+        user.walletBalance = balanceBefore - amount;
+        await user.save();
+
+        // Update transaction
+        transaction.status = "completed";
+        transaction.balanceAfter = user.walletBalance;
+        transaction.metadata.vtpassResponse = vtpassData;
+        await transaction.save();
+
+        res.json({
+          success: true,
+          message: "Airtime purchased successfully",
+          transaction: {
+            _id: transaction._id,
+            type: transaction.type,
+            amount: transaction.amount,
+            status: transaction.status,
+            phone,
+            network,
+          },
+          newBalance: user.walletBalance,
+        });
+      } else {
+        // VTpass purchase failed
+        transaction.status = "failed";
+        transaction.metadata.vtpassResponse = vtpassData;
+        transaction.metadata.error = vtpassData.response_description || "VTpass purchase failed";
+        await transaction.save();
+
+        res.status(400).json({
+          success: false,
+          error: "Failed to process airtime purchase",
+          vtpassError: vtpassData.response_description || vtpassData.message,
+        });
+      }
     } catch (serviceError) {
       // If service call fails, mark transaction as failed
       transaction.status = "failed";
@@ -116,10 +153,7 @@ export const buyAirtime = async (req, res) => {
       res.status(500).json({
         success: false,
         error: "Failed to process airtime purchase",
-        transaction: {
-          _id: transaction._id,
-          status: "failed",
-        },
+        details: serviceError.message,
       });
     }
   } catch (err) {
@@ -161,6 +195,19 @@ export const buyData = async (req, res) => {
       });
     }
 
+    // Get VTpass integration for data
+    const integration = await Integration.findOne({
+      providerName: { $regex: /vtpass/i },
+      category: "data",
+    });
+
+    if (!integration) {
+      return res.status(503).json({
+        success: false,
+        error: "Data service not configured",
+      });
+    }
+
     const balanceBefore = user.walletBalance;
     const transaction = await Transaction.create({
       userId: user._id,
@@ -177,13 +224,52 @@ export const buyData = async (req, res) => {
     });
 
     try {
-      // Simulate successful data purchase
-      user.walletBalance = balanceBefore - amount;
-      await user.save();
+      // Call VTpass API for data
+      const serviceIDMap = {
+        "MTN": "mtn-data",
+        "Airtel": "airtel-data",
+        "Glo": "glo-data",
+        "9mobile": "9mobile-data"
+      };
+      
+      const serviceID = serviceIDMap[network] || `${network.toLowerCase()}-data`;
+      const requestId = `${user._id}_${Date.now()}`;
+      const variationCode = `${network.toLowerCase()}-${dataPlan.toLowerCase().replace(/\s/g, '')}`;
 
-      transaction.status = "completed";
-      transaction.balanceAfter = user.walletBalance;
-      await transaction.save();
+      const vtpassPayload = {
+        request_id: requestId,
+        serviceID: serviceID,
+        billersCode: phone,
+        variation_code: variationCode,
+        amount: amount.toString(),
+        phone: phone
+      };
+
+      const apiKey = integration.credentials.find(c => 
+        c.label.toLowerCase().includes("api"))?.value;
+      const publicKey = integration.credentials.find(c => 
+        c.label.toLowerCase().includes("public"))?.value;
+
+      const vtpassResponse = await fetch(`${integration.baseUrl}/pay`, {
+        method: "POST",
+        headers: {
+          "api-key": apiKey || "",
+          "public-key": publicKey,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(vtpassPayload),
+      });
+
+      const vtpassData = await vtpassResponse.json();
+
+      if (vtpassData.content && vtpassData.content.transactions) {
+        user.walletBalance = balanceBefore - amount;
+        await user.save();
+
+        transaction.status = "completed";
+        transaction.balanceAfter = user.walletBalance;
+        transaction.metadata.vtpassResponse = vtpassData;
+        await transaction.save();
 
       res.json({
         success: true,
@@ -199,6 +285,19 @@ export const buyData = async (req, res) => {
         },
         newBalance: user.walletBalance,
       });
+      } else {
+        // VTpass purchase failed
+        transaction.status = "failed";
+        transaction.metadata.vtpassResponse = vtpassData;
+        transaction.metadata.error = vtpassData.response_description || "VTpass purchase failed";
+        await transaction.save();
+
+        res.status(400).json({
+          success: false,
+          error: "Failed to process data purchase",
+          vtpassError: vtpassData.response_description || vtpassData.message,
+        });
+      }
     } catch (serviceError) {
       transaction.status = "failed";
       transaction.metadata.error = serviceError.message;
@@ -207,10 +306,7 @@ export const buyData = async (req, res) => {
       res.status(500).json({
         success: false,
         error: "Failed to process data purchase",
-        transaction: {
-          _id: transaction._id,
-          status: "failed",
-        },
+        details: serviceError.message,
       });
     }
   } catch (err) {
@@ -252,6 +348,19 @@ export const payElectricity = async (req, res) => {
       });
     }
 
+    // Get VTpass integration for electricity
+    const integration = await Integration.findOne({
+      providerName: { $regex: /vtpass/i },
+      category: "electricity",
+    });
+
+    if (!integration) {
+      return res.status(503).json({
+        success: false,
+        error: "Electricity service not configured",
+      });
+    }
+
     const balanceBefore = user.walletBalance;
     const transaction = await Transaction.create({
       userId: user._id,
@@ -268,13 +377,52 @@ export const payElectricity = async (req, res) => {
     });
 
     try {
-      // Simulate successful payment
-      user.walletBalance = balanceBefore - amount;
-      await user.save();
+      // Call VTpass API for electricity
+      const serviceIDMap = {
+        "IKEDC": "ikeja-electric",
+        "EKEDC": "eko-electric",
+        "KEDCO": "kano-electric",
+        "AEDC": "abuja-electric"
+      };
+      
+      const serviceID = serviceIDMap[provider] || `${provider.toLowerCase().replace(/\s/g, '-')}-electric`;
+      const requestId = `${user._id}_${Date.now()}`;
+      const variationCode = meterType.toLowerCase();
 
-      transaction.status = "completed";
-      transaction.balanceAfter = user.walletBalance;
-      await transaction.save();
+      const vtpassPayload = {
+        request_id: requestId,
+        serviceID: serviceID,
+        billersCode: meterNumber,
+        variation_code: variationCode,
+        amount: amount.toString(),
+        phone: user.phone || "08111111111" // VTpass requires phone
+      };
+
+      const apiKey = integration.credentials.find(c => 
+        c.label.toLowerCase().includes("api"))?.value;
+      const publicKey = integration.credentials.find(c => 
+        c.label.toLowerCase().includes("public"))?.value;
+
+      const vtpassResponse = await fetch(`${integration.baseUrl}/pay`, {
+        method: "POST",
+        headers: {
+          "api-key": apiKey || "",
+          "public-key": publicKey,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(vtpassPayload),
+      });
+
+      const vtpassData = await vtpassResponse.json();
+
+      if (vtpassData.content && vtpassData.content.transactions) {
+        user.walletBalance = balanceBefore - amount;
+        await user.save();
+
+        transaction.status = "completed";
+        transaction.balanceAfter = user.walletBalance;
+        transaction.metadata.vtpassResponse = vtpassData;
+        await transaction.save();
 
       res.json({
         success: true,
@@ -289,6 +437,19 @@ export const payElectricity = async (req, res) => {
         },
         newBalance: user.walletBalance,
       });
+      } else {
+        // VTpass purchase failed
+        transaction.status = "failed";
+        transaction.metadata.vtpassResponse = vtpassData;
+        transaction.metadata.error = vtpassData.response_description || "VTpass purchase failed";
+        await transaction.save();
+
+        res.status(400).json({
+          success: false,
+          error: "Failed to process electricity payment",
+          vtpassError: vtpassData.response_description || vtpassData.message,
+        });
+      }
     } catch (serviceError) {
       transaction.status = "failed";
       transaction.metadata.error = serviceError.message;
