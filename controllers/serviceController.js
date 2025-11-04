@@ -26,6 +26,15 @@ export const buyAirtime = async (req, res) => {
       });
     }
 
+    // Validate phone number format (Nigerian: 11 digits, starts with 0)
+    const phoneStr = String(phone).replace(/\D/g, ''); // Remove non-digits
+    if (phoneStr.length !== 11 || !phoneStr.startsWith('0')) {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid phone number. Must be 11 digits starting with 0 (e.g., 08111111111)",
+      });
+    }
+
     // Get user and check balance
     const user = await User.findById(req.user.id);
     if (!user) {
@@ -39,11 +48,21 @@ export const buyAirtime = async (req, res) => {
       });
     }
 
-    // Get VTpass integration
-    const integration = await Integration.findOne({
+    // Get VTpass integration (prioritize live mode for production)
+    let integration = await Integration.findOne({
       providerName: { $regex: /vtpass/i },
       category: "airtime",
+      mode: "live",
     });
+
+    // Fallback to sandbox if live not found (for testing)
+    if (!integration) {
+      integration = await Integration.findOne({
+        providerName: { $regex: /vtpass/i },
+        category: "airtime",
+        mode: "sandbox",
+      });
+    }
 
     if (!integration) {
       return res.status(503).json({
@@ -89,22 +108,79 @@ export const buyAirtime = async (req, res) => {
       };
 
       // Get credentials
-      const apiKey = integration.credentials.find(c => 
-        c.label.toLowerCase().includes("api"))?.value;
-      const publicKey = integration.credentials.find(c => 
-        c.label.toLowerCase().includes("public"))?.value;
+      // VTpass: POST requests require api-key + secret-key (NOT public-key)
+      // Try multiple variations of credential labels
+      const apiKeyCred = integration.credentials.find(c => 
+        c.label && (c.label.toLowerCase().includes("api") || c.label.toLowerCase() === "api-key"));
+      const apiKey = apiKeyCred?.value || integration.credentials.find(c => 
+        c.label && c.label.toLowerCase().includes("api-key"))?.value;
+      
+      const secretKeyCred = integration.credentials.find(c => 
+        c.label && (c.label.toLowerCase().includes("secret") || c.label.toLowerCase() === "secret-key"));
+      const secretKey = secretKeyCred?.value || integration.credentials.find(c => 
+        c.label && c.label.toLowerCase().includes("secret-key"))?.value;
+
+      // Debug: Log available credential labels (without values)
+      const availableLabels = integration.credentials.map(c => c.label).filter(Boolean);
+      if (!apiKey || !secretKey) {
+        transaction.status = "failed";
+        transaction.metadata.error = "VTpass credentials missing (API Key or Secret Key)";
+        transaction.metadata.debug = {
+          availableLabels,
+          foundApiKey: !!apiKey,
+          foundSecretKey: !!secretKey,
+          integrationMode: integration.mode
+        };
+        await transaction.save();
+        
+        return res.status(503).json({
+          success: false,
+          error: "VTpass credentials not configured properly",
+          details: "Missing API Key or Secret Key in integration settings",
+          debug: {
+            availableLabels,
+            mode: integration.mode
+          }
+        });
+      }
 
       const vtpassResponse = await fetch(`${integration.baseUrl}/pay`, {
         method: "POST",
         headers: {
-          "api-key": apiKey || "",
-          "public-key": publicKey,
+          "api-key": apiKey,
+          "secret-key": secretKey, // POST requests use secret-key, not public-key
           "Content-Type": "application/json",
         },
         body: JSON.stringify(vtpassPayload),
       });
 
       const vtpassData = await vtpassResponse.json();
+
+      // Check for VTpass errors
+      if (vtpassData.response_description && vtpassData.response_description.includes("INVALID CREDENTIALS")) {
+        transaction.status = "failed";
+        transaction.metadata.vtpassResponse = vtpassData;
+        transaction.metadata.error = "VTpass credentials are invalid";
+        transaction.metadata.debug = {
+          integrationMode: integration.mode,
+          baseUrl: integration.baseUrl,
+          availableLabels: integration.credentials.map(c => c.label).filter(Boolean),
+        };
+        await transaction.save();
+
+        return res.status(400).json({
+          success: false,
+          error: "Failed to process airtime purchase",
+          vtpassError: "INVALID CREDENTIALS",
+          message: "VTpass credentials are invalid. Please verify your API Key and Secret Key are correct and match your VTpass account mode (live/sandbox).",
+          debug: {
+            mode: integration.mode,
+            suggestion: integration.mode === "sandbox" 
+              ? "Ensure you're using sandbox credentials. Switch to live mode with live credentials for production."
+              : "Ensure you're using live/production credentials from your VTpass dashboard."
+          }
+        });
+      }
 
       // Check if VTpass purchase was successful
       if (vtpassData.content && vtpassData.content.transactions) {
@@ -183,6 +259,15 @@ export const buyData = async (req, res) => {
       });
     }
 
+    // Validate phone number format (Nigerian: 11 digits, starts with 0)
+    const phoneStr = String(phone).replace(/\D/g, ''); // Remove non-digits
+    if (phoneStr.length !== 11 || !phoneStr.startsWith('0')) {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid phone number. Must be 11 digits starting with 0 (e.g., 08111111111)",
+      });
+    }
+
     const user = await User.findById(req.user.id);
     if (!user) {
       return res.status(404).json({ success: false, error: "User not found" });
@@ -195,11 +280,21 @@ export const buyData = async (req, res) => {
       });
     }
 
-    // Get VTpass integration for data
-    const integration = await Integration.findOne({
+    // Get VTpass integration for data (prioritize live mode for production)
+    let integration = await Integration.findOne({
       providerName: { $regex: /vtpass/i },
       category: "data",
+      mode: "live",
     });
+
+    // Fallback to sandbox if live not found (for testing)
+    if (!integration) {
+      integration = await Integration.findOne({
+        providerName: { $regex: /vtpass/i },
+        category: "data",
+        mode: "sandbox",
+      });
+    }
 
     if (!integration) {
       return res.status(503).json({
@@ -245,22 +340,80 @@ export const buyData = async (req, res) => {
         phone: phone
       };
 
-      const apiKey = integration.credentials.find(c => 
-        c.label.toLowerCase().includes("api"))?.value;
-      const publicKey = integration.credentials.find(c => 
-        c.label.toLowerCase().includes("public"))?.value;
+      // Get credentials
+      // VTpass: POST requests require api-key + secret-key (NOT public-key)
+      // Try multiple variations of credential labels
+      const apiKeyCred = integration.credentials.find(c => 
+        c.label && (c.label.toLowerCase().includes("api") || c.label.toLowerCase() === "api-key"));
+      const apiKey = apiKeyCred?.value || integration.credentials.find(c => 
+        c.label && c.label.toLowerCase().includes("api-key"))?.value;
+      
+      const secretKeyCred = integration.credentials.find(c => 
+        c.label && (c.label.toLowerCase().includes("secret") || c.label.toLowerCase() === "secret-key"));
+      const secretKey = secretKeyCred?.value || integration.credentials.find(c => 
+        c.label && c.label.toLowerCase().includes("secret-key"))?.value;
+
+      // Debug: Log available credential labels (without values)
+      const availableLabels = integration.credentials.map(c => c.label).filter(Boolean);
+      if (!apiKey || !secretKey) {
+        transaction.status = "failed";
+        transaction.metadata.error = "VTpass credentials missing (API Key or Secret Key)";
+        transaction.metadata.debug = {
+          availableLabels,
+          foundApiKey: !!apiKey,
+          foundSecretKey: !!secretKey,
+          integrationMode: integration.mode
+        };
+        await transaction.save();
+        
+        return res.status(503).json({
+          success: false,
+          error: "VTpass credentials not configured properly",
+          details: "Missing API Key or Secret Key in integration settings",
+          debug: {
+            availableLabels,
+            mode: integration.mode
+          }
+        });
+      }
 
       const vtpassResponse = await fetch(`${integration.baseUrl}/pay`, {
         method: "POST",
         headers: {
-          "api-key": apiKey || "",
-          "public-key": publicKey,
+          "api-key": apiKey,
+          "secret-key": secretKey, // POST requests use secret-key, not public-key
           "Content-Type": "application/json",
         },
         body: JSON.stringify(vtpassPayload),
       });
 
       const vtpassData = await vtpassResponse.json();
+
+      // Check for VTpass errors
+      if (vtpassData.response_description && vtpassData.response_description.includes("INVALID CREDENTIALS")) {
+        transaction.status = "failed";
+        transaction.metadata.vtpassResponse = vtpassData;
+        transaction.metadata.error = "VTpass credentials are invalid";
+        transaction.metadata.debug = {
+          integrationMode: integration.mode,
+          baseUrl: integration.baseUrl,
+          availableLabels: integration.credentials.map(c => c.label).filter(Boolean),
+        };
+        await transaction.save();
+
+        return res.status(400).json({
+          success: false,
+          error: "Failed to process data purchase",
+          vtpassError: "INVALID CREDENTIALS",
+          message: "VTpass credentials are invalid. Please verify your API Key and Secret Key are correct and match your VTpass account mode (live/sandbox).",
+          debug: {
+            mode: integration.mode,
+            suggestion: integration.mode === "sandbox" 
+              ? "Ensure you're using sandbox credentials. Switch to live mode with live credentials for production."
+              : "Ensure you're using live/production credentials from your VTpass dashboard."
+          }
+        });
+      }
 
       if (vtpassData.content && vtpassData.content.transactions) {
         user.walletBalance = balanceBefore - amount;
@@ -348,11 +501,21 @@ export const payElectricity = async (req, res) => {
       });
     }
 
-    // Get VTpass integration for electricity
-    const integration = await Integration.findOne({
+    // Get VTpass integration for electricity (prioritize live mode for production)
+    let integration = await Integration.findOne({
       providerName: { $regex: /vtpass/i },
       category: "electricity",
+      mode: "live",
     });
+
+    // Fallback to sandbox if live not found (for testing)
+    if (!integration) {
+      integration = await Integration.findOne({
+        providerName: { $regex: /vtpass/i },
+        category: "electricity",
+        mode: "sandbox",
+      });
+    }
 
     if (!integration) {
       return res.status(503).json({
@@ -381,8 +544,11 @@ export const payElectricity = async (req, res) => {
       const serviceIDMap = {
         "IKEDC": "ikeja-electric",
         "EKEDC": "eko-electric",
+        "EEDC": "enugu-electric",
         "KEDCO": "kano-electric",
-        "AEDC": "abuja-electric"
+        "AEDC": "abuja-electric",
+        "PHED": "portharcourt-electric",
+        "IBEDC": "ibadan-electric"
       };
       
       const serviceID = serviceIDMap[provider] || `${provider.toLowerCase().replace(/\s/g, '-')}-electric`;
@@ -398,22 +564,80 @@ export const payElectricity = async (req, res) => {
         phone: user.phone || "08111111111" // VTpass requires phone
       };
 
-      const apiKey = integration.credentials.find(c => 
-        c.label.toLowerCase().includes("api"))?.value;
-      const publicKey = integration.credentials.find(c => 
-        c.label.toLowerCase().includes("public"))?.value;
+      // Get credentials
+      // VTpass: POST requests require api-key + secret-key (NOT public-key)
+      // Try multiple variations of credential labels
+      const apiKeyCred = integration.credentials.find(c => 
+        c.label && (c.label.toLowerCase().includes("api") || c.label.toLowerCase() === "api-key"));
+      const apiKey = apiKeyCred?.value || integration.credentials.find(c => 
+        c.label && c.label.toLowerCase().includes("api-key"))?.value;
+      
+      const secretKeyCred = integration.credentials.find(c => 
+        c.label && (c.label.toLowerCase().includes("secret") || c.label.toLowerCase() === "secret-key"));
+      const secretKey = secretKeyCred?.value || integration.credentials.find(c => 
+        c.label && c.label.toLowerCase().includes("secret-key"))?.value;
+
+      // Debug: Log available credential labels (without values)
+      const availableLabels = integration.credentials.map(c => c.label).filter(Boolean);
+      if (!apiKey || !secretKey) {
+        transaction.status = "failed";
+        transaction.metadata.error = "VTpass credentials missing (API Key or Secret Key)";
+        transaction.metadata.debug = {
+          availableLabels,
+          foundApiKey: !!apiKey,
+          foundSecretKey: !!secretKey,
+          integrationMode: integration.mode
+        };
+        await transaction.save();
+        
+        return res.status(503).json({
+          success: false,
+          error: "VTpass credentials not configured properly",
+          details: "Missing API Key or Secret Key in integration settings",
+          debug: {
+            availableLabels,
+            mode: integration.mode
+          }
+        });
+      }
 
       const vtpassResponse = await fetch(`${integration.baseUrl}/pay`, {
         method: "POST",
         headers: {
-          "api-key": apiKey || "",
-          "public-key": publicKey,
+          "api-key": apiKey,
+          "secret-key": secretKey, // POST requests use secret-key, not public-key
           "Content-Type": "application/json",
         },
         body: JSON.stringify(vtpassPayload),
       });
 
       const vtpassData = await vtpassResponse.json();
+
+      // Check for VTpass errors
+      if (vtpassData.response_description && vtpassData.response_description.includes("INVALID CREDENTIALS")) {
+        transaction.status = "failed";
+        transaction.metadata.vtpassResponse = vtpassData;
+        transaction.metadata.error = "VTpass credentials are invalid";
+        transaction.metadata.debug = {
+          integrationMode: integration.mode,
+          baseUrl: integration.baseUrl,
+          availableLabels: integration.credentials.map(c => c.label).filter(Boolean),
+        };
+        await transaction.save();
+
+        return res.status(400).json({
+          success: false,
+          error: "Failed to process electricity payment",
+          vtpassError: "INVALID CREDENTIALS",
+          message: "VTpass credentials are invalid. Please verify your API Key and Secret Key are correct and match your VTpass account mode (live/sandbox).",
+          debug: {
+            mode: integration.mode,
+            suggestion: integration.mode === "sandbox" 
+              ? "Ensure you're using sandbox credentials. Switch to live mode with live credentials for production."
+              : "Ensure you're using live/production credentials from your VTpass dashboard."
+          }
+        });
+      }
 
       if (vtpassData.content && vtpassData.content.transactions) {
         user.walletBalance = balanceBefore - amount;
