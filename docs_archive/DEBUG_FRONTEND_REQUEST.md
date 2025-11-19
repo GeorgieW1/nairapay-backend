@@ -314,3 +314,12 @@ fetch('https://nairapay-backend-production.up.railway.app/api/services/airtime',
 
 **Share what this outputs!** That will tell us exactly what's wrong.
 
+
+
+
+
+
+
+
+
+

@@ -400,3 +400,12 @@ ERROR GET /api/wallet/balance 401 - Invalid token
 **Your backend is fully functional and ready for integration!** 🎉
 
 
+
+
+
+
+
+
+
+
+
