@@ -262,16 +262,107 @@ export const buyAirtime = async (req, res) => {
 };
 
 /**
+ * Get Data Plans (Variations) from VTPass
+ */
+export const getDataPlans = async (req, res) => {
+  try {
+    const { network } = req.query;
+    
+    if (!network) {
+      return res.status(400).json({
+        success: false,
+        error: "Network is required (MTN, Airtel, Glo, 9mobile)"
+      });
+    }
+
+    // Get VTpass integration
+    const integration = await Integration.findOne({
+      providerName: { $regex: /vtpass/i },
+      category: "data",
+      mode: "live"
+    });
+
+    if (!integration) {
+      return res.status(503).json({
+        success: false,
+        error: "Data service not configured"
+      });
+    }
+
+    // Map network to VTpass service ID
+    const serviceIDMap = {
+      "MTN": "mtn-data",
+      "Airtel": "airtel-data",
+      "Glo": "glo-data",
+      "9mobile": "etisalat-data"
+    };
+    
+    const serviceID = serviceIDMap[network];
+    if (!serviceID) {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid network. Use: MTN, Airtel, Glo, or 9mobile"
+      });
+    }
+
+    // Get credentials
+    const staticKeyCred = integration.credentials.find(c => 
+      c.label && c.label.toLowerCase().includes("static"));
+    const publicKeyCred = integration.credentials.find(c => 
+      c.label && c.label.toLowerCase().includes("public"));
+    
+    const staticKey = staticKeyCred?.value;
+    const publicKey = publicKeyCred?.value;
+
+    if (!staticKey || !publicKey) {
+      return res.status(503).json({
+        success: false,
+        error: "VTpass credentials not configured"
+      });
+    }
+
+    // Fetch variations from VTPass
+    const response = await fetch(
+      `${integration.baseUrl}/service-variations?serviceID=${serviceID}`,
+      {
+        method: "GET",
+        headers: {
+          "api-key": staticKey,
+          "public-key": publicKey
+        }
+      }
+    );
+
+    const data = await response.json();
+
+    if (data.response_description === "000" || data.content?.varations) {
+      res.json({
+        success: true,
+        network,
+        plans: data.content.varations || []
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        error: data.response_description || "Failed to fetch data plans"
+      });
+    }
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
+/**
  * Buy Data
  */
 export const buyData = async (req, res) => {
   try {
-    const { phone, network, dataPlan, amount } = req.body;
+    const { phone, network, dataPlan, amount, variation_code } = req.body;
 
-    if (!phone || !network || !dataPlan || !amount) {
+    if (!phone || !network || !amount || !variation_code) {
       return res.status(400).json({
         success: false,
-        error: "Phone, network, dataPlan, and amount are required",
+        error: "Phone, network, amount, and variation_code are required. Call /api/services/data-plans?network=MTN first to get variation codes.",
       });
     }
 
@@ -352,13 +443,12 @@ export const buyData = async (req, res) => {
       
       const serviceID = serviceIDMap[network] || `${network.toLowerCase()}-data`;
       const requestId = `${user._id}_${Date.now()}`;
-      const variationCode = `${network.toLowerCase()}-${dataPlan.toLowerCase().replace(/\s/g, '')}`;
 
       const vtpassPayload = {
         request_id: requestId,
         serviceID: serviceID,
         billersCode: phone,
-        variation_code: variationCode,
+        variation_code: variation_code, // Use exact code from VTPass API
         amount: amount.toString(),
         phone: phone
       };
