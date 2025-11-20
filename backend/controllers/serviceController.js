@@ -369,12 +369,15 @@ export const getDataPlans = async (req, res) => {
  */
 export const buyData = async (req, res) => {
   try {
-    const { phone, network, dataPlan, amount, variation_code } = req.body;
+    const { phone, network, dataPlan, amount, variation_code, variationCode } = req.body;
+    
+    // Accept both variation_code (snake_case) and variationCode (camelCase) from frontend
+    const variationCodeValue = variation_code || variationCode;
 
-    if (!phone || !network || !amount || !variation_code) {
+    if (!phone || !network || !amount || !variationCodeValue) {
       return res.status(400).json({
         success: false,
-        error: "Phone, network, amount, and variation_code are required. Call /api/services/data-plans?network=MTN first to get variation codes.",
+        error: "Phone, network, amount, and variationCode are required. Call /api/data/plans?network=mtn first to get variation codes.",
       });
     }
 
@@ -445,22 +448,25 @@ export const buyData = async (req, res) => {
     });
 
     try {
+      // Normalize network name to title case (accept both "airtel" and "AIRTEL")
+      const normalizedNetwork = network.charAt(0).toUpperCase() + network.slice(1).toLowerCase();
+      
       // Call VTpass API for data
       const serviceIDMap = {
-        "MTN": "mtn-data",
+        "Mtn": "mtn-data",
         "Airtel": "airtel-data",
         "Glo": "glo-data",
         "9mobile": "9mobile-data"
       };
       
-      const serviceID = serviceIDMap[network] || `${network.toLowerCase()}-data`;
+      const serviceID = serviceIDMap[normalizedNetwork] || `${network.toLowerCase()}-data`;
       const requestId = `${user._id}_${Date.now()}`;
 
       const vtpassPayload = {
         request_id: requestId,
         serviceID: serviceID,
         billersCode: phone,
-        variation_code: variation_code, // Use exact code from VTPass API
+        variation_code: variationCodeValue, // Use exact code from VTPass API
         amount: amount.toString(),
         phone: phone
       };
