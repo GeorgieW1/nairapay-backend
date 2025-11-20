@@ -266,21 +266,33 @@ export const buyAirtime = async (req, res) => {
  */
 export const getDataPlans = async (req, res) => {
   try {
-    const { network } = req.query;
+    let { network } = req.query;
     
     if (!network) {
       return res.status(400).json({
         success: false,
-        error: "Network is required (MTN, Airtel, Glo, 9mobile)"
+        error: "Network is required (mtn, airtel, glo, 9mobile)"
       });
     }
 
-    // Get VTpass integration
-    const integration = await Integration.findOne({
+    // Normalize network name to title case (accept both "mtn" and "MTN")
+    network = network.charAt(0).toUpperCase() + network.slice(1).toLowerCase();
+    
+    // Get VTpass integration (prioritize live mode for production)
+    let integration = await Integration.findOne({
       providerName: { $regex: /vtpass/i },
       category: "data",
       mode: "live"
     });
+
+    // Fallback to sandbox if live not found (for testing)
+    if (!integration) {
+      integration = await Integration.findOne({
+        providerName: { $regex: /vtpass/i },
+        category: "data",
+        mode: "sandbox"
+      });
+    }
 
     if (!integration) {
       return res.status(503).json({
@@ -291,7 +303,7 @@ export const getDataPlans = async (req, res) => {
 
     // Map network to VTpass service ID
     const serviceIDMap = {
-      "MTN": "mtn-data",
+      "Mtn": "mtn-data",
       "Airtel": "airtel-data",
       "Glo": "glo-data",
       "9mobile": "etisalat-data"
@@ -301,7 +313,7 @@ export const getDataPlans = async (req, res) => {
     if (!serviceID) {
       return res.status(400).json({
         success: false,
-        error: "Invalid network. Use: MTN, Airtel, Glo, or 9mobile"
+        error: "Invalid network. Use: mtn, airtel, glo, or 9mobile"
       });
     }
 

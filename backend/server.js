@@ -17,6 +17,7 @@ import adminRoutes from "./routes/adminRoutes.js";
 import walletRoutes from "./routes/walletRoutes.js";
 import transactionRoutes from "./routes/transactionRoutes.js";
 import serviceRoutes from "./routes/serviceRoutes.js";
+import dataRoutes from "./routes/dataRoutes.js";
 
 dotenv.config();
 
@@ -140,6 +141,7 @@ app.use("/api/vtpass", vtpassRoutes);
 app.use("/api/wallet", walletRoutes);
 app.use("/api/transactions", transactionRoutes);
 app.use("/api/services", serviceRoutes);
+app.use("/api/data", dataRoutes);
 
 // Initialize server (for non-serverless deployments)
 const startServer = async () => {
