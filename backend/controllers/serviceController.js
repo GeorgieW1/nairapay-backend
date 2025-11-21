@@ -609,14 +609,11 @@ export const buyData = async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 };
-
-/**
- * Pay Electricity
- */
 export const payElectricity = async (req, res) => {
   try {
     const { meterNumber, meterType, provider, amount } = req.body;
 
+    // 1. Input validation
     if (!meterNumber || !meterType || !provider || !amount) {
       return res.status(400).json({
         success: false,
@@ -624,6 +621,7 @@ export const payElectricity = async (req, res) => {
       });
     }
 
+    // 2. Amount validation
     if (amount <= 0) {
       return res.status(400).json({
         success: false,
@@ -631,6 +629,16 @@ export const payElectricity = async (req, res) => {
       });
     }
 
+    // 3. Meter number validation (11-16 digits, with optional - or /)
+    const formattedMeterNumber = String(meterNumber).replace(/\D/g, '');
+    if (formattedMeterNumber.length < 11 || formattedMeterNumber.length > 16) {
+      return res.status(400).json({
+        success: false,
+        error: "Meter number must be 11-16 digits long",
+      });
+    }
+
+    // 4. Get user and check balance
     const user = await User.findById(req.user.id);
     if (!user) {
       return res.status(404).json({ success: false, error: "User not found" });
@@ -643,14 +651,14 @@ export const payElectricity = async (req, res) => {
       });
     }
 
-    // Get VTpass integration for electricity (prioritize live mode for production)
+    // 5. Get VTpass integration
     let integration = await Integration.findOne({
       providerName: { $regex: /vtpass/i },
       category: "electricity",
       mode: "live",
     });
 
-    // Fallback to sandbox if live not found (for testing)
+    // Fallback to sandbox if live not found
     if (!integration) {
       integration = await Integration.findOne({
         providerName: { $regex: /vtpass/i },
@@ -666,183 +674,123 @@ export const payElectricity = async (req, res) => {
       });
     }
 
+    // 6. Create transaction record
     const balanceBefore = user.walletBalance;
     const transaction = await Transaction.create({
       userId: user._id,
       type: "electricity",
       amount,
       status: "pending",
-      description: `Electricity bill payment - ${provider} ${meterNumber}`,
+      description: `Electricity payment - ${provider} ${formattedMeterNumber} (${meterType})`,
       balanceBefore,
       metadata: {
-        meterNumber,
+        meterNumber: formattedMeterNumber,
         meterType,
         provider,
       },
     });
 
     try {
-      // Call VTpass API for electricity
+      // 7. Map provider to VTpass service ID
       const serviceIDMap = {
         "IKEDC": "ikeja-electric",
-        "EKEDC": "eko-electric",
-        "EEDC": "enugu-electric",
-        "KEDCO": "kano-electric",
-        "AEDC": "abuja-electric",
-        "PHED": "portharcourt-electric",
-        "IBEDC": "ibadan-electric"
+        "EKEDC": "eko",
+        "EEDC": "enugu",
+        "KEDCO": "kano",
+        "AEDC": "abuja",
+        "PHED": "p-hcd",
+        "BEDC": "benin",
+        "IBEDC": "ibadan",
+        "JED": "jos",
+        "YEDC": "yola"
       };
       
-      const serviceID = serviceIDMap[provider] || `${provider.toLowerCase().replace(/\s/g, '-')}-electric`;
+      const serviceID = serviceIDMap[provider] || provider.toLowerCase();
       const requestId = `${user._id}_${Date.now()}`;
       const variationCode = meterType.toLowerCase();
 
+      // 8. Prepare VTpass payload
       const vtpassPayload = {
         request_id: requestId,
         serviceID: serviceID,
-        billersCode: meterNumber,
+        billersCode: formattedMeterNumber,
         variation_code: variationCode,
         amount: amount.toString(),
-        phone: user.phone || "08111111111" // VTpass requires phone
+        phone: user.phone || ""
       };
 
-      // Get credentials for POST request
-      // VTPass POST requests use: api-key (static) + secret-key (SK_)
-      const staticKeyCred = integration.credentials.find(c => 
-        c.label && c.label.toLowerCase().includes("static"));
-      const secretKeyCred = integration.credentials.find(c => 
-        c.label && c.label.toLowerCase().includes("secret"));
-      
-      const staticKey = staticKeyCred?.value;
-      const secretKey = secretKeyCred?.value;
-
-      // Debug: Log available credential labels (without values)
-      const availableLabels = integration.credentials.map(c => c.label).filter(Boolean);
-      if (!staticKey || !secretKey) {
-        transaction.status = "failed";
-        transaction.metadata.error = "VTpass credentials missing";
-        transaction.metadata.debug = {
-          availableLabels,
-          foundStaticKey: !!staticKey,
-          foundSecretKey: !!secretKey,
-          integrationMode: integration.mode
-        };
-        await transaction.save();
-        
-        return res.status(503).json({
-          success: false,
-          error: "VTpass credentials not configured properly",
-          details: "Missing Static Key or Secret Key. VTPass requires: Static Key, Public Key (PK_), Secret Key (SK_)",
-          debug: {
-            availableLabels,
-            mode: integration.mode
-          }
-        });
-      }
-
-      const vtpassResponse = await fetch(`${integration.baseUrl}/pay`, {
-        method: "POST",
+      // 9. Make API call to VTpass
+      const response = await fetch('https://vtpass.com/api/pay', {
+        method: 'POST',
         headers: {
-          "api-key": staticKey,
-          "secret-key": secretKey,
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
+          'api-key': integration.apiKey,
+          'secret-key': integration.secretKey
         },
-        body: JSON.stringify(vtpassPayload),
+        body: JSON.stringify(vtpassPayload)
       });
 
-      const vtpassData = await vtpassResponse.json();
+      const data = await response.json();
 
-      // Check for VTpass errors
-      if (vtpassData.response_description && vtpassData.response_description.includes("INVALID CREDENTIALS")) {
-        transaction.status = "failed";
-        transaction.metadata.vtpassResponse = vtpassData;
-        transaction.metadata.error = "VTpass credentials are invalid";
-        transaction.metadata.debug = {
-          integrationMode: integration.mode,
-          baseUrl: integration.baseUrl,
-          availableLabels: integration.credentials.map(c => c.label).filter(Boolean),
-        };
-        await transaction.save();
+      // 10. Handle VTpass response
+      if (data.code === '000' || data.code === '021') {
+        // Success
+        user.walletBalance -= amount;
+        await user.save();
+
+        await Transaction.findByIdAndUpdate(transaction._id, {
+          status: "completed",
+          balanceAfter: user.walletBalance,
+          reference: data.transactionId || requestId,
+          metadata: {
+            ...transaction.metadata,
+            vtpassResponse: data
+          }
+        });
+
+        return res.status(200).json({
+          success: true,
+          message: "Electricity payment successful",
+          transaction: {
+            id: transaction._id,
+            amount,
+            meterNumber: formattedMeterNumber,
+            provider,
+            date: new Date()
+          }
+        });
+      } else {
+        // VTpass returned an error
+        await Transaction.findByIdAndUpdate(transaction._id, {
+          status: "failed",
+          error: data.response_description || "Payment failed"
+        });
 
         return res.status(400).json({
           success: false,
-          error: "Failed to process electricity payment",
-          vtpassError: "INVALID CREDENTIALS",
-          message: "VTpass credentials are invalid. Please verify your API Key and Secret Key are correct and match your VTpass account mode (live/sandbox).",
-          debug: {
-            mode: integration.mode,
-            suggestion: integration.mode === "sandbox" 
-              ? "Ensure you're using sandbox credentials. Switch to live mode with live credentials for production."
-              : "Ensure you're using live/production credentials from your VTpass dashboard."
-          }
+          error: data.response_description || "Failed to process payment",
+          code: data.code
         });
       }
-
-      // Check if VTpass purchase was successful
-      // VTpass success indicators: code === "000" or response_description contains "successful"
-      const isSuccess = vtpassData.code === "000" || 
-                       vtpassData.code === 0 ||
-                       (vtpassData.response_description && 
-                        vtpassData.response_description.toLowerCase().includes("successful")) ||
-                       (vtpassData.content && vtpassData.content.transactions) ||
-                       vtpassData.status === "delivered";
-
-      // Log VTpass response for debugging
-      if (req.log) req.log.info({ vtpassCode: vtpassData.code, vtpassStatus: vtpassData.status, vtpassDescription: vtpassData.response_description }, "VTpass electricity API response received");
-
-      if (isSuccess) {
-        user.walletBalance = balanceBefore - amount;
-        await user.save();
-
-        transaction.status = "completed";
-        transaction.balanceAfter = user.walletBalance;
-        transaction.metadata.vtpassResponse = vtpassData;
-        transaction.metadata.vtpassTransactionId = vtpassData.requestId || vtpassData.transactionId;
-        await transaction.save();
-
-      res.json({
-        success: true,
-        message: "Electricity bill paid successfully",
-        transaction: {
-          _id: transaction._id,
-          type: transaction.type,
-          amount: transaction.amount,
-          status: transaction.status,
-          meterNumber,
-          provider,
-        },
-        newBalance: user.walletBalance,
+    } catch (error) {
+      console.error('VTpass API Error:', error);
+      
+      await Transaction.findByIdAndUpdate(transaction._id, {
+        status: "failed",
+        error: error.message || "Failed to process payment with VTpass"
       });
-      } else {
-        // VTpass purchase failed
-        transaction.status = "failed";
-        transaction.metadata.vtpassResponse = vtpassData;
-        transaction.metadata.error = vtpassData.response_description || "VTpass purchase failed";
-        await transaction.save();
 
-        res.status(400).json({
-          success: false,
-          error: "Failed to process electricity payment",
-          vtpassError: vtpassData.response_description || vtpassData.message,
-        });
-      }
-    } catch (serviceError) {
-      transaction.status = "failed";
-      transaction.metadata.error = serviceError.message;
-      await transaction.save();
-
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
-        error: "Failed to process electricity payment",
-        transaction: {
-          _id: transaction._id,
-          status: "failed",
-        },
+        error: "Failed to process payment. Please try again later."
       });
     }
   } catch (err) {
-    if (req.log) req.log.error({ err }, "Pay electricity error");
-    res.status(500).json({ success: false, error: err.message });
+    console.error('Server Error:', err);
+    return res.status(500).json({ 
+      success: false, 
+      error: "An error occurred while processing your request" 
+    });
   }
 };
 
