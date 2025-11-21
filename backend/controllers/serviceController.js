@@ -95,7 +95,7 @@ export const buyAirtime = async (req, res) => {
         "Glo": "glo",
         "9mobile": "9mobile"
       };
-      
+
       const serviceID = serviceIDMap[network] || network.toLowerCase();
       const requestId = `${user._id}_${Date.now()}`;
 
@@ -109,11 +109,11 @@ export const buyAirtime = async (req, res) => {
 
       // Get credentials for POST request
       // VTPass POST requests use: api-key (static) + secret-key (SK_)
-      const staticKeyCred = integration.credentials.find(c => 
+      const staticKeyCred = integration.credentials.find(c =>
         c.label && c.label.toLowerCase().includes("static"));
-      const secretKeyCred = integration.credentials.find(c => 
+      const secretKeyCred = integration.credentials.find(c =>
         c.label && c.label.toLowerCase().includes("secret"));
-      
+
       const staticKey = staticKeyCred?.value;
       const secretKey = secretKeyCred?.value;
 
@@ -129,7 +129,7 @@ export const buyAirtime = async (req, res) => {
           integrationMode: integration.mode
         };
         await transaction.save();
-        
+
         return res.status(503).json({
           success: false,
           error: "VTpass credentials not configured properly",
@@ -184,7 +184,7 @@ export const buyAirtime = async (req, res) => {
           message: "VTpass credentials are invalid. Please verify your API Key and Secret Key are correct and match your VTpass account mode (live/sandbox).",
           debug: {
             mode: integration.mode,
-            suggestion: integration.mode === "sandbox" 
+            suggestion: integration.mode === "sandbox"
               ? "Ensure you're using sandbox credentials. Switch to live mode with live credentials for production."
               : "Ensure you're using live/production credentials from your VTpass dashboard."
           }
@@ -193,12 +193,12 @@ export const buyAirtime = async (req, res) => {
 
       // Check if VTpass purchase was successful
       // VTpass success indicators: code === "000" or response_description contains "successful"
-      const isSuccess = vtpassData.code === "000" || 
-                       vtpassData.code === 0 ||
-                       (vtpassData.response_description && 
-                        vtpassData.response_description.toLowerCase().includes("successful")) ||
-                       (vtpassData.content && vtpassData.content.transactions) ||
-                       vtpassData.status === "delivered";
+      const isSuccess = vtpassData.code === "000" ||
+        vtpassData.code === 0 ||
+        (vtpassData.response_description &&
+          vtpassData.response_description.toLowerCase().includes("successful")) ||
+        (vtpassData.content && vtpassData.content.transactions) ||
+        vtpassData.status === "delivered";
 
       if (isSuccess) {
         // If successful, deduct from wallet
@@ -267,7 +267,7 @@ export const buyAirtime = async (req, res) => {
 export const getDataPlans = async (req, res) => {
   try {
     let { network } = req.query;
-    
+
     if (!network) {
       return res.status(400).json({
         success: false,
@@ -277,7 +277,7 @@ export const getDataPlans = async (req, res) => {
 
     // Normalize network name to title case (accept both "mtn" and "MTN")
     network = network.charAt(0).toUpperCase() + network.slice(1).toLowerCase();
-    
+
     // Get VTpass integration (prioritize live mode for production)
     let integration = await Integration.findOne({
       providerName: { $regex: /vtpass/i },
@@ -309,7 +309,7 @@ export const getDataPlans = async (req, res) => {
       "9mobile": "etisalat-data",
       "Nmobile": "etisalat-data"  // Handle 'nmobile' as an alias for 9mobile
     };
-    
+
     const serviceID = serviceIDMap[network];
     if (!serviceID) {
       return res.status(400).json({
@@ -319,11 +319,11 @@ export const getDataPlans = async (req, res) => {
     }
 
     // Get credentials
-    const staticKeyCred = integration.credentials.find(c => 
+    const staticKeyCred = integration.credentials.find(c =>
       c.label && c.label.toLowerCase().includes("static"));
-    const publicKeyCred = integration.credentials.find(c => 
+    const publicKeyCred = integration.credentials.find(c =>
       c.label && c.label.toLowerCase().includes("public"));
-    
+
     const staticKey = staticKeyCred?.value;
     const publicKey = publicKeyCred?.value;
 
@@ -371,7 +371,7 @@ export const getDataPlans = async (req, res) => {
 export const buyData = async (req, res) => {
   try {
     const { phone, network, dataPlan, amount, variation_code, variationCode } = req.body;
-    
+
     // Accept both variation_code (snake_case) and variationCode (camelCase) from frontend
     const variationCodeValue = variation_code || variationCode;
 
@@ -451,7 +451,7 @@ export const buyData = async (req, res) => {
     try {
       // Normalize network name to title case (accept both "airtel" and "AIRTEL")
       const normalizedNetwork = network.charAt(0).toUpperCase() + network.slice(1).toLowerCase();
-      
+
       // Call VTpass API for data
       const serviceIDMap = {
         "Mtn": "mtn-data",
@@ -459,7 +459,7 @@ export const buyData = async (req, res) => {
         "Glo": "glo-data",
         "9mobile": "9mobile-data"
       };
-      
+
       const serviceID = serviceIDMap[normalizedNetwork] || `${network.toLowerCase()}-data`;
       const requestId = `${user._id}_${Date.now()}`;
 
@@ -474,11 +474,11 @@ export const buyData = async (req, res) => {
 
       // Get credentials for POST request
       // VTPass POST requests use: api-key (static) + secret-key (SK_)
-      const staticKeyCred = integration.credentials.find(c => 
+      const staticKeyCred = integration.credentials.find(c =>
         c.label && c.label.toLowerCase().includes("static"));
-      const secretKeyCred = integration.credentials.find(c => 
+      const secretKeyCred = integration.credentials.find(c =>
         c.label && c.label.toLowerCase().includes("secret"));
-      
+
       const staticKey = staticKeyCred?.value;
       const secretKey = secretKeyCred?.value;
 
@@ -494,7 +494,7 @@ export const buyData = async (req, res) => {
           integrationMode: integration.mode
         };
         await transaction.save();
-        
+
         return res.status(503).json({
           success: false,
           error: "VTpass credentials not configured properly",
@@ -537,7 +537,7 @@ export const buyData = async (req, res) => {
           message: "VTpass credentials are invalid. Please verify your API Key and Secret Key are correct and match your VTpass account mode (live/sandbox).",
           debug: {
             mode: integration.mode,
-            suggestion: integration.mode === "sandbox" 
+            suggestion: integration.mode === "sandbox"
               ? "Ensure you're using sandbox credentials. Switch to live mode with live credentials for production."
               : "Ensure you're using live/production credentials from your VTpass dashboard."
           }
@@ -546,12 +546,12 @@ export const buyData = async (req, res) => {
 
       // Check if VTpass purchase was successful
       // VTpass success indicators: code === "000" or response_description contains "successful"
-      const isSuccess = vtpassData.code === "000" || 
-                       vtpassData.code === 0 ||
-                       (vtpassData.response_description && 
-                        vtpassData.response_description.toLowerCase().includes("successful")) ||
-                       (vtpassData.content && vtpassData.content.transactions) ||
-                       vtpassData.status === "delivered";
+      const isSuccess = vtpassData.code === "000" ||
+        vtpassData.code === 0 ||
+        (vtpassData.response_description &&
+          vtpassData.response_description.toLowerCase().includes("successful")) ||
+        (vtpassData.content && vtpassData.content.transactions) ||
+        vtpassData.status === "delivered";
 
       // Log VTpass response for debugging
       if (req.log) req.log.info({ vtpassCode: vtpassData.code, vtpassStatus: vtpassData.status, vtpassDescription: vtpassData.response_description }, "VTpass data API response received");
@@ -566,20 +566,20 @@ export const buyData = async (req, res) => {
         transaction.metadata.vtpassTransactionId = vtpassData.requestId || vtpassData.transactionId;
         await transaction.save();
 
-      res.json({
-        success: true,
-        message: "Data purchased successfully",
-        transaction: {
-          _id: transaction._id,
-          type: transaction.type,
-          amount: transaction.amount,
-          status: transaction.status,
-          phone,
-          network,
-          dataPlan,
-        },
-        newBalance: user.walletBalance,
-      });
+        res.json({
+          success: true,
+          message: "Data purchased successfully",
+          transaction: {
+            _id: transaction._id,
+            type: transaction.type,
+            amount: transaction.amount,
+            status: transaction.status,
+            phone,
+            network,
+            dataPlan,
+          },
+          newBalance: user.walletBalance,
+        });
       } else {
         // VTpass purchase failed
         transaction.status = "failed";
@@ -704,7 +704,7 @@ export const payElectricity = async (req, res) => {
         "JED": "jos",
         "YEDC": "yola"
       };
-      
+
       const serviceID = serviceIDMap[provider] || provider.toLowerCase();
       const requestId = `${user._id}_${Date.now()}`;
       const variationCode = meterType.toLowerCase();
@@ -719,7 +719,10 @@ export const payElectricity = async (req, res) => {
         phone: user.phone || ""
       };
 
-      // 9. Make API call to VTpass
+      // 9. Make API call to VTpass with timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
+
       const response = await fetch('https://vtpass.com/api/pay', {
         method: 'POST',
         headers: {
@@ -727,8 +730,10 @@ export const payElectricity = async (req, res) => {
           'api-key': integration.apiKey,
           'secret-key': integration.secretKey
         },
-        body: JSON.stringify(vtpassPayload)
+        body: JSON.stringify(vtpassPayload),
+        signal: controller.signal
       });
+      clearTimeout(timeoutId);
 
       const data = await response.json();
 
@@ -774,11 +779,19 @@ export const payElectricity = async (req, res) => {
       }
     } catch (error) {
       console.error('VTpass API Error:', error);
-      
+
       await Transaction.findByIdAndUpdate(transaction._id, {
         status: "failed",
         error: error.message || "Failed to process payment with VTpass"
       });
+
+      // Handle timeout specifically
+      if (error.name === 'AbortError') {
+        return res.status(504).json({
+          success: false,
+          error: "Payment service timeout. The electricity provider is taking too long to respond. Please try again later."
+        });
+      }
 
       return res.status(500).json({
         success: false,
@@ -787,9 +800,9 @@ export const payElectricity = async (req, res) => {
     }
   } catch (err) {
     console.error('Server Error:', err);
-    return res.status(500).json({ 
-      success: false, 
-      error: "An error occurred while processing your request" 
+    return res.status(500).json({
+      success: false,
+      error: "An error occurred while processing your request"
     });
   }
 };
