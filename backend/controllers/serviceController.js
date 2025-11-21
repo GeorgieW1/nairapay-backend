@@ -306,7 +306,8 @@ export const getDataPlans = async (req, res) => {
       "Mtn": "mtn-data",
       "Airtel": "airtel-data",
       "Glo": "glo-data",
-      "9mobile": "etisalat-data"
+      "9mobile": "etisalat-data",
+      "Nmobile": "etisalat-data"  // Handle 'nmobile' as an alias for 9mobile
     };
     
     const serviceID = serviceIDMap[network];
