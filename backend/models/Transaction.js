@@ -9,7 +9,7 @@ const transactionSchema = new mongoose.Schema(
     },
     type: {
       type: String,
-      enum: ["credit", "debit", "airtime", "data", "electricity", "tv", "betting"],
+      enum: ["credit", "debit", "airtime", "data", "electricity", "tv", "epin", "betting"],
       required: true,
     },
     amount: {
@@ -40,6 +40,13 @@ const transactionSchema = new mongoose.Schema(
     plan: String,
     meterNumber: String,
     meterType: String,
+    // For TV subscriptions
+    smartcardNumber: String,
+    tvProvider: String,
+    bouquet: String,
+    // For E-pins
+    epinCategory: String,
+    pins: [String], // Encrypted e-pins
   },
   { timestamps: true }
 );
