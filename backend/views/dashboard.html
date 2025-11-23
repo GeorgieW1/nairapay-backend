@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -7,27 +8,27 @@
   <link rel="stylesheet" href="/style.css" />
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@600;700&display=swap');
-    
+
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
     }
-    
+
     body {
       margin: 0;
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       display: flex;
       height: 100vh;
       background: #0a0e27;
-      background-image: 
+      background-image:
         radial-gradient(at 20% 50%, rgba(34, 197, 94, 0.08) 0px, transparent 50%),
         radial-gradient(at 80% 80%, rgba(59, 130, 246, 0.08) 0px, transparent 50%),
         radial-gradient(at 40% 20%, rgba(168, 85, 247, 0.06) 0px, transparent 50%);
       background-attachment: fixed;
       color: #e5e7eb;
     }
-    
+
     .sidebar {
       width: 280px;
       background: #111827;
@@ -41,7 +42,7 @@
       z-index: 10;
       backdrop-filter: blur(20px);
     }
-    
+
     .sidebar::before {
       content: '';
       position: absolute;
@@ -51,7 +52,7 @@
       height: 1px;
       background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.3), transparent);
     }
-    
+
     .sidebar h2 {
       font-family: 'Space Grotesk', sans-serif;
       text-align: left;
@@ -65,17 +66,17 @@
       background-clip: text;
       padding-left: 8px;
     }
-    
+
     .sidebar ul {
       list-style: none;
       padding: 0;
       margin: 0;
     }
-    
+
     .sidebar ul li {
       margin-bottom: 6px;
     }
-    
+
     .sidebar ul li a {
       color: rgba(229, 231, 235, 0.7);
       text-decoration: none;
@@ -90,7 +91,7 @@
       position: relative;
       overflow: hidden;
     }
-    
+
     .sidebar ul li a::before {
       content: '';
       position: absolute;
@@ -102,28 +103,28 @@
       transform: scaleY(0);
       transition: transform 0.25s ease;
     }
-    
+
     .sidebar ul li a:hover {
       background: rgba(59, 130, 246, 0.08);
       color: #e5e7eb;
       transform: translateX(4px);
     }
-    
+
     .sidebar ul li a:hover::before {
       transform: scaleY(1);
     }
-    
+
     .sidebar ul li a.active {
       background: rgba(59, 130, 246, 0.15);
       color: #3b82f6;
       font-weight: 600;
       border-left: 3px solid #3b82f6;
     }
-    
+
     .sidebar ul li a.active::before {
       transform: scaleY(1);
     }
-    
+
     .main {
       flex: 1;
       padding: 48px 56px;
@@ -132,7 +133,7 @@
       height: 100vh;
       position: relative;
     }
-    
+
     section {
       width: 100%;
       overflow-y: auto;
@@ -140,7 +141,7 @@
       padding-bottom: 40px;
       display: block;
     }
-    
+
     section h2 {
       position: sticky;
       top: 0;
@@ -149,24 +150,27 @@
       padding: 16px 0;
       margin-top: 0;
     }
-    
-    .hidden { display: none; }
 
-    h1, h2 {
+    .hidden {
+      display: none;
+    }
+
+    h1,
+    h2 {
       color: #f9fafb;
       margin-bottom: 32px;
       font-family: 'Space Grotesk', sans-serif;
       font-weight: 700;
       letter-spacing: -0.5px;
     }
-    
+
     h1 {
       font-size: 2.5rem;
       border-bottom: 2px solid rgba(59, 130, 246, 0.3);
       padding-bottom: 16px;
       position: relative;
     }
-    
+
     h1::after {
       content: '';
       position: absolute;
@@ -176,18 +180,18 @@
       height: 2px;
       background: linear-gradient(90deg, #3b82f6, #22c55e);
     }
-    
+
     h2 {
       font-size: 1.875rem;
       margin-top: 16px;
       border-bottom: none;
       padding-bottom: 0;
     }
-    
+
     h2::after {
       display: none;
     }
-    
+
     h4 {
       color: #d1d5db;
       margin-bottom: 20px;
@@ -206,13 +210,14 @@
       overflow: hidden;
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
     }
-    
-    th, td {
+
+    th,
+    td {
       padding: 18px 20px;
       text-align: left;
       border-bottom: 1px solid rgba(59, 130, 246, 0.05);
     }
-    
+
     th {
       background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
       color: #e5e7eb;
@@ -223,24 +228,24 @@
       font-family: 'Space Grotesk', sans-serif;
       border-bottom: 2px solid rgba(59, 130, 246, 0.2);
     }
-    
+
     tr:last-child td {
       border-bottom: none;
     }
-    
-    tr:nth-child(even) { 
-      background-color: rgba(59, 130, 246, 0.02); 
+
+    tr:nth-child(even) {
+      background-color: rgba(59, 130, 246, 0.02);
     }
-    
-    tr:hover { 
-      background-color: rgba(59, 130, 246, 0.08); 
+
+    tr:hover {
+      background-color: rgba(59, 130, 246, 0.08);
       transition: background-color 0.2s;
     }
-    
+
     td {
       color: #d1d5db;
     }
-    
+
     td button {
       padding: 8px 16px;
       border-radius: 6px;
@@ -252,7 +257,7 @@
       background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
       color: white;
     }
-    
+
     td button:hover {
       transform: translateY(-2px);
       box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
@@ -268,11 +273,11 @@
       width: 100%;
       overflow: visible;
     }
-    
+
     .form-group {
       margin-bottom: 24px;
     }
-    
+
     .form-group label {
       display: block;
       margin-bottom: 10px;
@@ -281,8 +286,9 @@
       font-size: 0.9rem;
       letter-spacing: 0.3px;
     }
-    
-    form input, form select {
+
+    form input,
+    form select {
       width: 100%;
       padding: 14px 18px;
       border-radius: 10px;
@@ -293,18 +299,19 @@
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       font-family: 'Inter', sans-serif;
     }
-    
+
     form input::placeholder {
       color: rgba(229, 231, 235, 0.4);
     }
-    
-    form input:focus, form select:focus {
+
+    form input:focus,
+    form select:focus {
       outline: none;
       border-color: #3b82f6;
       background: #1f2937;
       box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
     }
-    
+
     form button {
       padding: 14px 28px;
       border-radius: 10px;
@@ -317,24 +324,24 @@
       margin-top: 12px;
       font-family: 'Inter', sans-serif;
     }
-    
+
     form button[type="submit"] {
       background: linear-gradient(135deg, #3b82f6 0%, #22c55e 100%);
       color: white;
       box-shadow: 0 4px 20px rgba(59, 130, 246, 0.4);
     }
-    
+
     form button[type="submit"]:hover {
       transform: translateY(-2px);
       box-shadow: 0 8px 28px rgba(59, 130, 246, 0.5);
     }
-    
+
     form button[type="button"] {
       background: #1e293b;
       color: #e5e7eb;
       border: 1.5px solid rgba(59, 130, 246, 0.2);
     }
-    
+
     form button[type="button"]:hover {
       background: #1f2937;
       border-color: rgba(59, 130, 246, 0.4);
@@ -346,17 +353,17 @@
       margin-bottom: 14px;
       align-items: center;
     }
-    
+
     .credential-pair input.label {
       flex: 0 0 200px;
       font-weight: 600;
       background: #0f172a;
     }
-    
+
     .credential-pair input.value {
       flex: 1;
     }
-    
+
     .credential-pair .remove-btn {
       padding: 10px 16px;
       background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
@@ -368,7 +375,7 @@
       font-weight: 600;
       transition: all 0.2s;
     }
-    
+
     .credential-pair .remove-btn:hover {
       transform: scale(1.05);
       box-shadow: 0 4px 16px rgba(239, 68, 68, 0.4);
@@ -385,7 +392,7 @@
       border: 1px solid rgba(59, 130, 246, 0.1);
       flex-wrap: wrap;
     }
-    
+
     .filters select,
     .filters input {
       padding: 12px 16px;
@@ -397,16 +404,16 @@
       transition: all 0.3s;
       font-family: 'Inter', sans-serif;
     }
-    
+
     .filters select {
       min-width: 150px;
     }
-    
+
     .filters input {
       flex: 1;
       min-width: 200px;
     }
-    
+
     .filters select:focus,
     .filters input:focus {
       outline: none;
@@ -414,7 +421,7 @@
       background: #1f2937;
       box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
     }
-    
+
     .filters button {
       padding: 12px 20px;
       border-radius: 8px;
@@ -425,24 +432,24 @@
       transition: all 0.3s;
       font-family: 'Inter', sans-serif;
     }
-    
+
     #applyFilters {
       background: linear-gradient(135deg, #3b82f6 0%, #22c55e 100%);
       color: white;
       box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
     }
-    
+
     #applyFilters:hover {
       transform: translateY(-2px);
       box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
     }
-    
+
     #clearFilters {
       background: #1e293b;
       color: #e5e7eb;
       border: 1.5px solid rgba(59, 130, 246, 0.2);
     }
-    
+
     #clearFilters:hover {
       background: #1f2937;
       border-color: rgba(59, 130, 246, 0.4);
@@ -459,7 +466,7 @@
       border-radius: 12px;
       border: 1px solid rgba(59, 130, 246, 0.1);
     }
-    
+
     #transactionsPagination button {
       padding: 10px 20px;
       border-radius: 8px;
@@ -470,19 +477,19 @@
       font-weight: 600;
       transition: all 0.3s;
     }
-    
+
     #transactionsPagination button:hover:not(:disabled) {
       background: #3b82f6;
       border-color: #3b82f6;
       transform: translateY(-2px);
       box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
     }
-    
+
     #transactionsPagination button:disabled {
       opacity: 0.4;
       cursor: not-allowed;
     }
-    
+
     #transactionsPagination span {
       color: #e5e7eb;
       font-weight: 600;
@@ -494,7 +501,7 @@
       gap: 20px;
       margin-bottom: 32px;
     }
-    
+
     .stat-card {
       background: linear-gradient(135deg, #111827 0%, #1e293b 100%);
       padding: 24px;
@@ -503,13 +510,13 @@
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
       transition: all 0.3s;
     }
-    
+
     .stat-card:hover {
       transform: translateY(-4px);
       box-shadow: 0 8px 28px rgba(59, 130, 246, 0.3);
       border-color: rgba(59, 130, 246, 0.4);
     }
-    
+
     .stat-card h3 {
       font-size: 0.85rem;
       color: #9ca3af;
@@ -518,7 +525,7 @@
       margin-bottom: 12px;
       font-weight: 600;
     }
-    
+
     .stat-value {
       font-size: 2rem;
       font-weight: 700;
@@ -526,13 +533,13 @@
       margin: 8px 0;
       font-family: 'Space Grotesk', sans-serif;
     }
-    
+
     .stat-label {
       font-size: 0.85rem;
       color: #6b7280;
       margin-top: 8px;
     }
-    
+
     .analytics-section {
       background: #111827;
       padding: 28px;
@@ -541,7 +548,7 @@
       margin-bottom: 24px;
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
     }
-    
+
     .analytics-section h2 {
       color: #e5e7eb;
       font-size: 1.3rem;
@@ -564,12 +571,12 @@
       box-shadow: 0 4px 20px rgba(239, 68, 68, 0.3);
       font-family: 'Inter', sans-serif;
     }
-    
+
     #logoutBtn:hover {
       transform: translateY(-2px);
       box-shadow: 0 8px 28px rgba(239, 68, 68, 0.5);
     }
-    
+
     table button {
       padding: 8px 18px;
       background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
@@ -581,12 +588,12 @@
       font-weight: 600;
       transition: all 0.2s;
     }
-    
+
     table button:hover {
       transform: scale(1.05);
       box-shadow: 0 4px 16px rgba(239, 68, 68, 0.4);
     }
-    
+
     #dashboardContent {
       font-size: 1.25rem;
       color: #d1d5db;
@@ -597,43 +604,46 @@
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
       font-weight: 500;
     }
-    
+
     .form-row {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 20px;
     }
-    
+
     @media (max-width: 768px) {
       .form-row {
         grid-template-columns: 1fr;
       }
+
       .sidebar {
         width: 220px;
         padding: 24px 16px;
       }
+
       .main {
         padding: 32px 24px;
       }
+
       h1 {
         font-size: 2rem;
       }
     }
-    
+
     /* Custom scrollbar */
     ::-webkit-scrollbar {
       width: 10px;
     }
-    
+
     ::-webkit-scrollbar-track {
       background: #111827;
     }
-    
+
     ::-webkit-scrollbar-thumb {
       background: rgba(59, 130, 246, 0.3);
       border-radius: 5px;
     }
-    
+
     ::-webkit-scrollbar-thumb:hover {
       background: rgba(59, 130, 246, 0.5);
     }
@@ -684,12 +694,12 @@
             <p class="stat-label" id="monthTransactions">0 transactions</p>
           </div>
         </div>
-        
+
         <div class="analytics-section">
           <h2>Service Breakdown (This Month)</h2>
           <div id="serviceBreakdown">Loading...</div>
         </div>
-        
+
         <div class="analytics-section">
           <h2>Top Users</h2>
           <table id="topUsersTable">
@@ -702,7 +712,9 @@
               </tr>
             </thead>
             <tbody>
-              <tr><td colspan="4">Loading...</td></tr>
+              <tr>
+                <td colspan="4">Loading...</td>
+              </tr>
             </tbody>
           </table>
         </div>
@@ -712,31 +724,31 @@
     <!-- Transactions Section -->
     <section id="transactionsSection" class="hidden">
       <h2>💳 All Transactions</h2>
-      
+
       <div class="filters">
         <select id="filterType">
           <option value="">All Types</option>
           <option value="credit">Wallet Funding</option>
           <option value="debit">Deductions</option>
-          <parameter name="airtime">Airtime</option>
+          <option value="airtime">Airtime</option>
           <option value="data">Data</option>
           <option value="electricity">Electricity</option>
           <option value="tv">TV Subscription</option>
           <option value="epin">E-pin</option>
         </select>
-        
+
         <select id="filterStatus">
           <option value="">All Status</option>
           <option value="completed">Completed</option>
           <option value="pending">Pending</option>
           <option value="failed">Failed</option>
         </select>
-        
+
         <input type="text" id="searchTransactions" placeholder="Search by description or phone...">
         <button id="applyFilters">Apply Filters</button>
         <button id="clearFilters">Clear</button>
       </div>
-      
+
       <table id="transactionsTable">
         <thead>
           <tr>
@@ -749,10 +761,12 @@
           </tr>
         </thead>
         <tbody>
-          <tr><td colspan="6">Loading...</td></tr>
+          <tr>
+            <td colspan="6">Loading...</td>
+          </tr>
         </tbody>
       </table>
-      
+
       <div id="transactionsPagination"></div>
     </section>
 
@@ -778,7 +792,7 @@
         </div>
         <button type="submit">💸 Fund Wallet</button>
       </form>
-      
+
       <form id="deductWalletForm" style="margin-top: 20px;">
         <h3>Deduct from Wallet</h3>
         <div class="form-group">
@@ -799,7 +813,7 @@
         </div>
         <button type="submit" style="background: #ef4444;">⚠️ Deduct from Wallet</button>
       </form>
-      
+
       <table id="usersTable">
         <thead>
           <tr>
@@ -822,7 +836,7 @@
           <label for="providerName">Provider Name</label>
           <input type="text" id="providerName" placeholder="e.g., VTpass" required />
         </div>
-        
+
         <div class="form-row">
           <div class="form-group">
             <label for="category">Category</label>
@@ -836,7 +850,7 @@
               <option value="others">Others</option>
             </select>
           </div>
-          
+
           <div class="form-group">
             <label for="mode">Mode</label>
             <select id="mode">
@@ -845,7 +859,7 @@
             </select>
           </div>
         </div>
-        
+
         <div class="form-group">
           <label for="baseUrl">Base URL</label>
           <input type="text" id="baseUrl" placeholder="e.g., https://sandbox.vtpass.com/api" required />
@@ -869,12 +883,13 @@
           </div>
           <button type="button" id="addCredentialField" style="margin-top: 10px;">+ Add More Fields</button>
         </div>
-        
+
         <button type="submit">💾 Save Integration</button>
       </form>
-      
+
       <div style="margin: 20px 0; display: flex; gap: 12px; flex-wrap: wrap;">
-        <button id="setupLiveCredentialsBtn" style="background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);">🚀 Setup Live Credentials (One-Click)</button>
+        <button id="setupLiveCredentialsBtn" style="background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);">🚀
+          Setup Live Credentials (One-Click)</button>
         <button id="testVTpassBtn" style="background: #10b981;">🔌 Test VTpass Connection</button>
       </div>
       <div id="setupResult" style="margin-top: 10px;"></div>
@@ -899,7 +914,7 @@
     <!-- Paystack Configuration Section -->
     <section id="paystackSection" class="section" style="display: none;">
       <h2>💳 Paystack Configuration</h2>
-      
+
       <div class="info-card">
         <h3>📊 Paystack Status</h3>
         <p><strong>Configuration Method:</strong> Environment Variables (.env file)</p>
@@ -937,7 +952,8 @@
 # In your .env file or Railway environment variables:
 PAYSTACK_PUBLIC_KEY=pk_test_your_public_key_here
 PAYSTACK_SECRET_KEY=sk_test_your_secret_key_here</pre>
-        <p><strong>Note:</strong> After updating environment variables, restart the application for changes to take effect.</p>
+        <p><strong>Note:</strong> After updating environment variables, restart the application for changes to take
+          effect.</p>
       </div>
 
       <div class="info-card">
@@ -971,4 +987,5 @@ PAYSTACK_SECRET_KEY=sk_test_your_secret_key_here</pre>
 
   <script src="/dashboard.js"></script>
 </body>
+
 </html>
