@@ -88,6 +88,18 @@ async function setupLiveCredentials() {
           { label: "Secret Key", value: VTPASS_LIVE_CREDENTIALS.secretKey }
         ],
         createdBy: "setup_script"
+      },
+      {
+        providerName: "VTpass",
+        category: "epin",
+        baseUrl: "https://vtpass.com/api",
+        mode: "live",
+        credentials: [
+          { label: "Static Key", value: VTPASS_LIVE_CREDENTIALS.staticKey },
+          { label: "Public Key", value: VTPASS_LIVE_CREDENTIALS.publicKey },
+          { label: "Secret Key", value: VTPASS_LIVE_CREDENTIALS.secretKey }
+        ],
+        createdBy: "setup_script"
       }
     ];
 
@@ -99,7 +111,7 @@ async function setupLiveCredentials() {
     console.log("\n✅ All VTpass integrations created successfully!");
     console.log("   - Mode: LIVE");
     console.log("   - Base URL: https://vtpass.com/api");
-    console.log("   - Categories: airtime, data, electricity, tv");
+    console.log("   - Categories: airtime, data, electricity, tv, epin");
 
     // ========================================
     // 2️⃣ PAYSTACK CREDENTIALS INFO
@@ -111,17 +123,17 @@ async function setupLiveCredentials() {
     console.log("PAYSTACK_PUBLIC_KEY=" + PAYSTACK_LIVE_CREDENTIALS.publicKey);
     console.log("PAYSTACK_SECRET_KEY=" + PAYSTACK_LIVE_CREDENTIALS.secretKey);
     console.log("\n📝 Also add to Railway/Render environment variables!");
-    
+
     // ========================================
     // 3️⃣ VERIFICATION
     // ========================================
     console.log("\n" + "=".repeat(60));
     console.log("🔍 VERIFICATION");
     console.log("=".repeat(60));
-    
+
     const allIntegrations = await Integration.find({ mode: "live" });
     console.log(`\n✅ Total Live Integrations: ${allIntegrations.length}`);
-    
+
     for (const integration of allIntegrations) {
       console.log(`   - ${integration.providerName} (${integration.category})`);
     }
