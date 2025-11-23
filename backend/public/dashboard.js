@@ -12,12 +12,12 @@ document.addEventListener("DOMContentLoaded", async () => {
   const usersSection = document.getElementById("usersSection");
   const integrationsSection = document.getElementById("integrationsSection");
   const paystackSection = document.getElementById("paystackSection");
-  
+
   const currencyFormatter = new Intl.NumberFormat("en-NG", {
     style: "currency",
     currency: "NGN",
   });
-  
+
   let cachedUsers = [];
   let currentTransactionsPage = 1;
   let transactionFilters = {};
@@ -51,11 +51,11 @@ document.addEventListener("DOMContentLoaded", async () => {
       const res = await fetch("/api/admin/analytics", {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+
       if (!res.ok) throw new Error("Failed to load analytics");
-      
+
       const { analytics } = await res.json();
-      
+
       // Update stat cards
       document.getElementById("todayRevenue").textContent = currencyFormatter.format(analytics.today.revenue);
       document.getElementById("todayTransactions").textContent = `${analytics.today.transactions} transactions`;
@@ -63,7 +63,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       document.getElementById("successRate").textContent = `${analytics.today.successRate}%`;
       document.getElementById("monthRevenue").textContent = currencyFormatter.format(analytics.month.revenue);
       document.getElementById("monthTransactions").textContent = `${analytics.month.transactions} transactions`;
-      
+
       // Service breakdown
       const serviceBreakdown = document.getElementById("serviceBreakdown");
       if (analytics.serviceBreakdown.length > 0) {
@@ -81,7 +81,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       } else {
         serviceBreakdown.innerHTML = '<p style="color: #9ca3af;">No transactions this month</p>';
       }
-      
+
       // Top users
       const tbody = document.querySelector("#topUsersTable tbody");
       if (analytics.topUsers.length > 0) {
@@ -107,6 +107,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       'airtime': '📱',
       'data': '📊',
       'electricity': '⚡',
+      'tv': '📺',
+      'epin': '🎓',
       'credit': '💰',
       'debit': '💸'
     };
@@ -118,6 +120,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       'airtime': 'Airtime',
       'data': 'Data',
       'electricity': 'Electricity',
+      'tv': 'TV Subscription',
+      'epin': 'E-pin',
       'credit': 'Wallet Funding',
       'debit': 'Deductions'
     };
@@ -139,15 +143,15 @@ document.addEventListener("DOMContentLoaded", async () => {
         limit: 50,
         ...transactionFilters
       });
-      
+
       const res = await fetch(`/api/admin/transactions?${params}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+
       if (!res.ok) throw new Error("Failed to load transactions");
-      
+
       const { transactions, pagination } = await res.json();
-      
+
       const tbody = document.querySelector("#transactionsTable tbody");
       if (transactions.length > 0) {
         tbody.innerHTML = transactions.map(tx => `
@@ -163,7 +167,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       } else {
         tbody.innerHTML = '<tr><td colspan="6">No transactions found</td></tr>';
       }
-      
+
       // Pagination
       const paginationDiv = document.getElementById("transactionsPagination");
       paginationDiv.innerHTML = `
@@ -171,7 +175,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         <span>Page ${pagination.page} of ${pagination.pages}</span>
         <button ${pagination.page === pagination.pages ? 'disabled' : ''} onclick="window.loadTransactionsPage(${pagination.page + 1})">Next</button>
       `;
-      
+
       currentTransactionsPage = page;
     } catch (error) {
       console.error("Error loading transactions:", error);
@@ -234,11 +238,11 @@ document.addEventListener("DOMContentLoaded", async () => {
       // Populate fund wallet select
       const fundUserSelect = document.getElementById("fundUserSelect");
       const deductUserSelect = document.getElementById("deductUserSelect");
-      
-      const userOptions = cachedUsers.map(u => 
+
+      const userOptions = cachedUsers.map(u =>
         `<option value="${u._id}">${u.name} (${u.email})</option>`
       ).join('');
-      
+
       fundUserSelect.innerHTML = '<option value="" disabled selected>Select a user</option>' + userOptions;
       deductUserSelect.innerHTML = '<option value="" disabled selected>Select a user</option>' + userOptions;
 
@@ -368,10 +372,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (!confirm("⚠️ This will DELETE all existing VTpass integrations and create new LIVE ones. Continue?")) {
       return;
     }
-    
+
     const btn = document.getElementById("setupLiveCredentialsBtn");
     const resultDiv = document.getElementById("setupResult");
-    
+
     btn.disabled = true;
     btn.textContent = "Setting up...";
     resultDiv.innerHTML = '<p style="color: #f59e0b;">Setting up live credentials...</p>';
@@ -383,7 +387,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       });
 
       const data = await res.json();
-      
+
       if (data.success) {
         resultDiv.innerHTML = `
           <div style="padding: 15px; background: rgba(34, 197, 94, 0.1); border: 1px solid #22c55e; border-radius: 8px; color: #22c55e;">
@@ -417,7 +421,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("testVTpassBtn").onclick = async () => {
     const btn = document.getElementById("testVTpassBtn");
     const resultDiv = document.getElementById("testResult");
-    
+
     btn.disabled = true;
     btn.textContent = "Testing...";
     resultDiv.innerHTML = '<p style="color: #f59e0b;">Testing VTpass connection...</p>';
@@ -429,7 +433,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       });
 
       const data = await res.json();
-      
+
       if (data.success) {
         resultDiv.innerHTML = `
           <div style="padding: 15px; background: rgba(34, 197, 94, 0.1); border: 1px solid #22c55e; border-radius: 8px; color: #22c55e;">
@@ -462,7 +466,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Delete integration
   window.deleteIntegration = async (id) => {
     console.log("Delete button clicked for ID:", id);
-    
+
     if (!confirm("⚠️ Are you sure you want to delete this integration?")) {
       console.log("Delete cancelled by user");
       return;
@@ -479,7 +483,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       console.log("Delete response status:", res.status);
       const data = await res.json();
       console.log("Delete response data:", data);
-      
+
       if (data.success) {
         alert("✅ Integration deleted successfully!");
         await loadIntegrations();
@@ -495,16 +499,16 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Add integration form
   document.getElementById("addIntegrationForm").onsubmit = async (e) => {
     e.preventDefault();
-    
+
     const providerName = document.getElementById("providerName").value;
     const category = document.getElementById("category").value;
     const mode = document.getElementById("mode").value;
     const baseUrl = document.getElementById("baseUrl").value;
-    
+
     // Collect credentials
     const credentialPairs = document.querySelectorAll("#credentialsContainer .credential-pair");
     const credentials = [];
-    
+
     credentialPairs.forEach(pair => {
       const label = pair.querySelector(".label").value;
       const value = pair.querySelector(".value").value;
@@ -515,12 +519,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
       }
     });
-    
+
     if (credentials.length === 0) {
       alert("Please add at least one credential");
       return;
     }
-    
+
     try {
       const res = await fetch("/api/admin/integrations", {
         method: "POST",
@@ -536,9 +540,9 @@ document.addEventListener("DOMContentLoaded", async () => {
           credentials
         })
       });
-      
+
       const data = await res.json();
-      
+
       if (data.success) {
         alert("✅ Integration added successfully!");
         document.getElementById("addIntegrationForm").reset();
