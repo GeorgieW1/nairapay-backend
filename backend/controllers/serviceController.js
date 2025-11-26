@@ -611,10 +611,11 @@ export const buyData = async (req, res) => {
 };
 export const payElectricity = async (req, res) => {
   try {
-    const { meterNumber, meterType, provider, amount } = req.body;
+    const { meterNumber, meterType, provider, disco, amount } = req.body;
+    const discoProvider = provider || disco;
 
     // 1. Input validation
-    if (!meterNumber || !meterType || !provider || !amount) {
+    if (!meterNumber || !meterType || !discoProvider || !amount) {
       return res.status(400).json({
         success: false,
         error: "Meter number, meter type, provider, and amount are required",
@@ -681,12 +682,12 @@ export const payElectricity = async (req, res) => {
       type: "electricity",
       amount,
       status: "pending",
-      description: `Electricity payment - ${provider} ${formattedMeterNumber} (${meterType})`,
+      description: `Electricity payment - ${discoProvider} ${formattedMeterNumber} (${meterType})`,
       balanceBefore,
       metadata: {
         meterNumber: formattedMeterNumber,
         meterType,
-        provider,
+        provider: discoProvider,
       },
     });
 
@@ -705,7 +706,7 @@ export const payElectricity = async (req, res) => {
         "YEDC": "yola"
       };
 
-      const serviceID = serviceIDMap[provider] || provider.toLowerCase();
+      const serviceID = serviceIDMap[discoProvider] || discoProvider.toLowerCase();
       const requestId = `${user._id}_${Date.now()}`;
       const variationCode = meterType.toLowerCase();
 
@@ -778,7 +779,7 @@ export const payElectricity = async (req, res) => {
           vtpassStatus: data.status,
           vtpassDescription: data.response_description,
           requestId: vtpassPayload.request_id,
-          provider: provider,
+          provider: discoProvider,
           amount: amount
         }, "VTpass electricity API response received");
       }
@@ -841,7 +842,7 @@ export const payElectricity = async (req, res) => {
             id: transaction._id,
             amount,
             meterNumber: formattedMeterNumber,
-            provider,
+            provider: discoProvider,
             date: new Date()
           }
         });
