@@ -56,6 +56,22 @@ export const verifySmartcard = async (req, res) => {
             });
         }
 
+        // Get credentials
+        const staticKeyCred = integration.credentials.find(c =>
+            c.label && c.label.toLowerCase().includes("static"));
+        const secretKeyCred = integration.credentials.find(c =>
+            c.label && c.label.toLowerCase().includes("secret"));
+
+        const staticKey = staticKeyCred?.value;
+        const secretKey = secretKeyCred?.value;
+
+        if (!staticKey || !secretKey) {
+            return res.status(503).json({
+                success: false,
+                error: "VTpass credentials not configured properly"
+            });
+        }
+
         // Call VTpass merchant-verify endpoint
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 30000);
@@ -64,8 +80,8 @@ export const verifySmartcard = async (req, res) => {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'api-key': integration.apiKey,
-                'secret-key': integration.secretKey
+                'api-key': staticKey,
+                'secret-key': secretKey
             },
             body: JSON.stringify({
                 billersCode: cleanSmartcard,
@@ -153,6 +169,22 @@ export const getTVPlans = async (req, res) => {
             });
         }
 
+        // Get credentials
+        const staticKeyCred = integration.credentials.find(c =>
+            c.label && c.label.toLowerCase().includes("static"));
+        const publicKeyCred = integration.credentials.find(c =>
+            c.label && c.label.toLowerCase().includes("public"));
+
+        const staticKey = staticKeyCred?.value;
+        const publicKey = publicKeyCred?.value;
+
+        if (!staticKey || !publicKey) {
+            return res.status(503).json({
+                success: false,
+                error: "VTpass credentials not configured properly"
+            });
+        }
+
         // Call VTpass service-variations endpoint
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 30000);
@@ -160,8 +192,8 @@ export const getTVPlans = async (req, res) => {
         const response = await fetch(`${integration.baseUrl}/service-variations?serviceID=${serviceID}`, {
             method: 'GET',
             headers: {
-                'api-key': integration.apiKey,
-                'public-key': integration.publicKey
+                'api-key': staticKey,
+                'public-key': publicKey
             },
             signal: controller.signal
         });
@@ -297,7 +329,27 @@ export const subscribeTVService = async (req, res) => {
         });
 
         try {
-            // 8. Prepare VTpass payload
+            // 8. Get credentials
+            const staticKeyCred = integration.credentials.find(c =>
+                c.label && c.label.toLowerCase().includes("static"));
+            const secretKeyCred = integration.credentials.find(c =>
+                c.label && c.label.toLowerCase().includes("secret"));
+
+            const staticKey = staticKeyCred?.value;
+            const secretKey = secretKeyCred?.value;
+
+            if (!staticKey || !secretKey) {
+                transaction.status = "failed";
+                transaction.metadata.error = "VTpass credentials missing";
+                await transaction.save();
+
+                return res.status(503).json({
+                    success: false,
+                    error: "VTpass credentials not configured properly"
+                });
+            }
+
+            // 9. Prepare VTpass payload
             const requestId = `${user._id}_${Date.now()}`;
             const vtpassPayload = {
                 request_id: requestId,
@@ -308,7 +360,7 @@ export const subscribeTVService = async (req, res) => {
                 phone: phone || user.phone || ""
             };
 
-            // 9. Make API call to VTpass with timeout
+            // 10. Make API call to VTpass with timeout
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 30000);
 
@@ -316,8 +368,8 @@ export const subscribeTVService = async (req, res) => {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'api-key': integration.apiKey,
-                    'secret-key': integration.secretKey
+                    'api-key': staticKey,
+                    'secret-key': secretKey
                 },
                 body: JSON.stringify(vtpassPayload),
                 signal: controller.signal
@@ -326,8 +378,15 @@ export const subscribeTVService = async (req, res) => {
 
             const data = await response.json();
 
-            // 10. Handle VTpass response
-            if (data.code === '000' || data.code === '021') {
+            // 11. Handle VTpass response - check for success
+            const isSuccess = data.code === "000" ||
+                data.code === 0 ||
+                (data.response_description &&
+                    data.response_description.toLowerCase().includes("successful")) ||
+                (data.content && data.content.transactions) ||
+                data.status === "delivered";
+
+            if (isSuccess) {
                 // Success
                 user.walletBalance -= amount;
                 await user.save();
@@ -338,7 +397,8 @@ export const subscribeTVService = async (req, res) => {
                     reference: data.transactionId || requestId,
                     metadata: {
                         ...transaction.metadata,
-                        vtpassResponse: data
+                        vtpassResponse: data,
+                        vtpassTransactionId: data.requestId || data.transactionId
                     }
                 });
 
