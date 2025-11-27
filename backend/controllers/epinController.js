@@ -66,7 +66,7 @@ export const getEpinPlans = async (req, res) => {
 
         // Map category to VTpass serviceID
         const serviceIDMap = {
-            "WAEC": "waec-registration",
+            "WAEC": "waec",
             "JAMB": "jamb",
             "NECO": "neco"
         };
@@ -125,6 +125,33 @@ export const getEpinPlans = async (req, res) => {
                 plans
             });
         } else {
+            // Fallback: Check if it's a single-product service (like WAEC/NECO result checkers)
+            // Fetch service details to get price
+            const serviceResponse = await fetch(`${integration.baseUrl}/services?identifier=${serviceID}`, {
+                method: 'GET',
+                headers: {
+                    'api-key': staticKey,
+                    'public-key': publicKey
+                }
+            });
+            const serviceData = await serviceResponse.json();
+
+            if (serviceData.content) {
+                // Use amount or minimium_amount
+                const price = serviceData.content.amount || serviceData.content.minimium_amount || 0;
+
+                return res.json({
+                    success: true,
+                    category: category.toUpperCase(),
+                    plans: [{
+                        code: "standard",
+                        name: serviceData.content.name || `${category.toUpperCase()} E-pin`,
+                        amount: parseFloat(price),
+                        fixedPrice: true
+                    }]
+                });
+            }
+
             return res.status(400).json({
                 success: false,
                 error: "Failed to fetch E-pin plans",
@@ -215,7 +242,7 @@ export const purchaseEpin = async (req, res) => {
 
         // 6. Map category to VTpass serviceID
         const serviceIDMap = {
-            "WAEC": "waec-registration",
+            "WAEC": "waec",
             "JAMB": "jamb",
             "NECO": "neco"
         };
