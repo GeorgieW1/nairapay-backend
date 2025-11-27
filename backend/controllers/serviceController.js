@@ -695,15 +695,16 @@ export const payElectricity = async (req, res) => {
       // 7. Map provider to VTpass service ID
       const serviceIDMap = {
         "IKEDC": "ikeja-electric",
-        "EKEDC": "eko",
-        "EEDC": "enugu",
-        "KEDCO": "kano",
-        "AEDC": "abuja",
-        "PHED": "p-hcd",
-        "BEDC": "benin",
-        "IBEDC": "ibadan",
-        "JED": "jos",
-        "YEDC": "yola"
+        "EKEDC": "eko-electric",
+        "EEDC": "enugu-electric",
+        "KEDCO": "kano-electric",
+        "AEDC": "abuja-electric",
+        "PHED": "portharcourt-electric",
+        "BEDC": "benin-electric",
+        "IBEDC": "ibadan-electric",
+        "JED": "jos-electric",
+        "YEDC": "yola-electric",
+        "KAEDCO": "kaduna-electric"
       };
 
       const serviceID = serviceIDMap[discoProvider] || discoProvider.toLowerCase();
@@ -717,7 +718,7 @@ export const payElectricity = async (req, res) => {
         billersCode: formattedMeterNumber,
         variation_code: variationCode,
         amount: amount.toString(),
-        phone: user.phone || ""
+        phone: user.phone || "08011111111" // Fallback phone if user has none
       };
 
       // 9. Get credentials for POST request
