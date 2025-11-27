@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken";
 import { register, login, firebaseLogin, verifyToken, forgotPassword, resetPassword, sendEmailOTP, verifyEmailOTP } from "../controllers/authController.js";
 import { validate } from "../middleware/validate.js";
 import { registerValidator, loginValidator, firebaseLoginValidator, forgotPasswordValidator, resetPasswordValidator } from "../validators/authValidators.js";
-import { protect } from "../middleware/authMiddleware.js";
+import { verifyToken as authMiddleware } from "../middleware/authMiddleware.js";
 import User from "../models/User.js"; // 👈 ensure your User model is imported
 
 
@@ -35,8 +35,8 @@ router.post("/forgot-password", forgotPasswordValidator, validate, forgotPasswor
 router.post("/reset-password", resetPasswordValidator, validate, resetPassword); // Reset password with token
 
 // Email OTP Verification
-router.post("/send-otp", protect, sendEmailOTP); // Send email verification OTP
-router.post("/verify-otp", protect, verifyEmailOTP); // Verify email OTP
+router.post("/send-otp", authMiddleware, sendEmailOTP); // Send email verification OTP
+router.post("/verify-otp", authMiddleware, verifyEmailOTP); // Verify email OTP
 
 // ✅ New route: Get all users
 router.get("/users", verifyToken, async (req, res) => {
