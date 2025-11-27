@@ -2,6 +2,7 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import User from "../models/User.js";
 import admin from "firebase-admin"; // now available from your server.js initialization
+import { sendOTPEmail } from "../services/emailService.js";
 
 const getJwtSecret = () => {
   const secret = process.env.JWT_SECRET;
@@ -10,6 +11,13 @@ const getJwtSecret = () => {
   }
   return secret;
 };
+
+/**
+ * Generate 4-digit OTP
+ */
+function generateOTP() {
+  return Math.floor(1000 + Math.random() * 9000).toString();
+}
 
 /**
  * 🔹 Manual Registration (optional)
@@ -39,7 +47,7 @@ export const register = async (req, res) => {
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
-    
+
     if (!email || !password) {
       return res.status(400).json({ success: false, error: "Email and password are required" });
     }
@@ -80,8 +88,8 @@ export const firebaseLogin = async (req, res) => {
     // Check if Firebase is initialized
     const firebaseInitialized = req.app.get("firebaseInitialized");
     if (!firebaseInitialized) {
-      return res.status(503).json({ 
-        error: "Firebase authentication is not configured. Please use email/password login instead." 
+      return res.status(503).json({
+        error: "Firebase authentication is not configured. Please use email/password login instead."
       });
     }
 
@@ -127,7 +135,7 @@ export const firebaseLogin = async (req, res) => {
     res.status(401).json({ error: "Invalid or expired Firebase token" });
   }
 };
-  
+
 
 export const verifyToken = async (req, res) => {
   try {
@@ -157,7 +165,7 @@ export const verifyToken = async (req, res) => {
 export const forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
-    
+
     if (!email) {
       return res.status(400).json({ success: false, error: "Email is required" });
     }
@@ -165,17 +173,17 @@ export const forgotPassword = async (req, res) => {
     const user = await User.findOne({ email });
     // For security, don't reveal if user exists or not
     if (!user) {
-      return res.json({ 
-        success: true, 
-        message: "If an account exists with this email, a password reset link has been sent." 
+      return res.json({
+        success: true,
+        message: "If an account exists with this email, a password reset link has been sent."
       });
     }
 
     // Check if user has a password (not Firebase-only account)
     if (!user.password) {
-      return res.status(400).json({ 
-        success: false, 
-        error: "This account uses Firebase login. Please use Google sign-in or reset password via Firebase." 
+      return res.status(400).json({
+        success: false,
+        error: "This account uses Firebase login. Please use Google sign-in or reset password via Firebase."
       });
     }
 
@@ -189,8 +197,8 @@ export const forgotPassword = async (req, res) => {
     // In a real app, you'd send this token via email
     // For now, we'll return it in the response (for development/testing)
     // TODO: Implement email sending service
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       message: "Password reset token generated",
       resetToken, // Remove this in production - only return in email
       note: "In production, this token should be sent via email"
@@ -207,18 +215,18 @@ export const forgotPassword = async (req, res) => {
 export const resetPassword = async (req, res) => {
   try {
     const { resetToken, newPassword } = req.body;
-    
+
     if (!resetToken || !newPassword) {
-      return res.status(400).json({ 
-        success: false, 
-        error: "Reset token and new password are required" 
+      return res.status(400).json({
+        success: false,
+        error: "Reset token and new password are required"
       });
     }
 
     if (newPassword.length < 6) {
-      return res.status(400).json({ 
-        success: false, 
-        error: "Password must be at least 6 characters" 
+      return res.status(400).json({
+        success: false,
+        error: "Password must be at least 6 characters"
       });
     }
 
@@ -248,5 +256,114 @@ export const resetPassword = async (req, res) => {
   } catch (err) {
     if (req.log) req.log.error({ err }, "Reset password error");
     res.status(500).json({ success: false, error: err.message });
+  }
+};
+
+/**
+ * 🔹 Send Email OTP for Verification
+ */
+export const sendEmailOTP = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: "User not found"
+      });
+    }
+
+    if (user.isEmailVerified) {
+      return res.status(400).json({
+        success: false,
+        error: "Email already verified"
+      });
+    }
+
+    // Generate new OTP
+    const otp = generateOTP();
+    user.emailVerificationOTP = otp;
+    user.emailVerificationExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
+    await user.save();
+
+    // Send email
+    const emailResult = await sendOTPEmail(user.email, otp, user.fullName || user.name || 'User');
+
+    if (!emailResult.success) {
+      return res.status(500).json({
+        success: false,
+        error: "Failed to send OTP email. Please try again later."
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "OTP sent to your email"
+    });
+  } catch (error) {
+    if (req.log) req.log.error({ err: error }, "Send OTP error");
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+/**
+ * 🔹 Verify Email OTP
+ */
+export const verifyEmailOTP = async (req, res) => {
+  try {
+    const { otp } = req.body;
+
+    if (!otp) {
+      return res.status(400).json({
+        success: false,
+        error: "OTP is required"
+      });
+    }
+
+    const user = await User.findById(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: "User not found"
+      });
+    }
+
+    if (user.isEmailVerified) {
+      return res.status(400).json({
+        success: false,
+        error: "Email already verified"
+      });
+    }
+
+    // Check OTP
+    if (!user.emailVerificationOTP || user.emailVerificationOTP !== otp) {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid OTP"
+      });
+    }
+
+    // Check expiry
+    if (Date.now() > user.emailVerificationExpires) {
+      return res.status(400).json({
+        success: false,
+        error: "OTP expired. Request a new one"
+      });
+    }
+
+    // Mark as verified
+    user.isEmailVerified = true;
+    user.emailVerificationOTP = undefined;
+    user.emailVerificationExpires = undefined;
+    await user.save();
+
+    res.json({
+      success: true,
+      message: "Email verified successfully"
+    });
+  } catch (error) {
+    if (req.log) req.log.error({ err: error }, "Verify OTP error");
+    res.status(500).json({ success: false, error: error.message });
   }
 };
