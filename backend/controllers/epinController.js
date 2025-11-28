@@ -65,18 +65,53 @@ export const getEpinPlans = async (req, res) => {
         }
 
         // Map category to VTpass serviceID
-        // Based on VTPass API documentation
+        // Based on VTPass API - Only WAEC is confirmed working
         const serviceIDMap = {
-            "WAEC": "waec",           // ✅ Confirmed working
-            "JAMB": "jamb-utme",      // JAMB UTME registration
-            "NECO": "neco-token"      // NECO result checker token
+            "WAEC": "waec",           // ✅ Confirmed working (₦3,900)
+            // ❌ NECO and JAMB not available on VTPass or use different IDs
+            // Tried: "neco", "neco-token", "jamb", "jamb-utme" - all failed
         };
 
         const serviceID = serviceIDMap[category.toUpperCase()];
         if (!serviceID) {
+            // If service not in map, try to fetch all services to debug
+            console.log(`⚠️ Unsupported E-pin category: ${category.toUpperCase()}`);
+            console.log(`📋 Fetching all VTPass services to find correct service ID...`);
+            
+            try {
+                // Fetch all services from VTPass
+                const allServicesResponse = await fetch(
+                    `${integration.baseUrl}/services`,
+                    {
+                        method: 'GET',
+                        headers: {
+                            'api-key': staticKey,
+                            'public-key': publicKey
+                        }
+                    }
+                );
+                const allServices = await allServicesResponse.json();
+                console.log(`\n📚 All VTPass services:`, JSON.stringify(allServices, null, 2));
+                
+                // Filter for E-pin related services
+                if (allServices.content) {
+                    const epinServices = allServices.content.filter(s => 
+                        s.name?.toLowerCase().includes('epin') ||
+                        s.name?.toLowerCase().includes('pin') ||
+                        s.name?.toLowerCase().includes('result') ||
+                        s.name?.toLowerCase().includes('checker') ||
+                        s.serviceID?.toLowerCase().includes(category.toLowerCase())
+                    );
+                    console.log(`\n🎯 E-pin related services:`, JSON.stringify(epinServices, null, 2));
+                }
+            } catch (debugError) {
+                console.log(`❌ Failed to fetch all services:`, debugError.message);
+            }
+            
             return res.status(400).json({
                 success: false,
-                error: "Invalid E-pin category. Supported: WAEC, JAMB, NECO",
+                error: `${category.toUpperCase()} E-pin is not currently supported. Only WAEC is available.`,
+                supportedCategories: ["WAEC"]
             });
         }
 
@@ -251,18 +286,18 @@ export const purchaseEpin = async (req, res) => {
         }
 
         // 6. Map category to VTpass serviceID
-        // Based on VTPass API documentation
+        // Based on VTPass API - Only WAEC is confirmed working
         const serviceIDMap = {
-            "WAEC": "waec",           // ✅ Confirmed working
-            "JAMB": "jamb-utme",      // JAMB UTME registration
-            "NECO": "neco-token"      // NECO result checker token
+            "WAEC": "waec",           // ✅ Confirmed working (₦3,900)
+            // ❌ NECO and JAMB not available on VTPass or use different IDs
         };
 
         const serviceID = serviceIDMap[category.toUpperCase()];
         if (!serviceID) {
             return res.status(400).json({
                 success: false,
-                error: "Invalid E-pin category. Supported: WAEC, JAMB, NECO",
+                error: `${category.toUpperCase()} E-pin is not currently supported. Only WAEC is available.`,
+                supportedCategories: ["WAEC"]
             });
         }
 
