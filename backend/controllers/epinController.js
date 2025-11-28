@@ -111,6 +111,9 @@ export const getEpinPlans = async (req, res) => {
 
         const data = await response.json();
 
+        // ✅ ADD LOGGING TO DEBUG PRICE ISSUE
+        console.log(`\n🔍 VTPass service-variations response for ${category.toUpperCase()}:`, JSON.stringify(data, null, 2));
+
         if (data.content && data.content.varations) {
             const plans = data.content.varations.map(plan => ({
                 code: plan.variation_code,
@@ -136,9 +139,14 @@ export const getEpinPlans = async (req, res) => {
             });
             const serviceData = await serviceResponse.json();
 
+            // ✅ ADD LOGGING FOR FALLBACK RESPONSE
+            console.log(`\n🔍 VTPass services fallback response for ${category.toUpperCase()}:`, JSON.stringify(serviceData, null, 2));
+
             if (serviceData.content) {
                 // Use amount or minimium_amount
                 const price = serviceData.content.amount || serviceData.content.minimium_amount || 0;
+
+                console.log(`💰 Extracted price for ${category.toUpperCase()}: ₦${price}`);
 
                 return res.json({
                     success: true,
@@ -166,6 +174,7 @@ export const getEpinPlans = async (req, res) => {
             });
         }
 
+        console.error('❌ Get E-pin plans error:', error);
         if (req.log) req.log.error({ err: error }, "Get E-pin plans error");
         return res.status(500).json({
             success: false,
@@ -320,6 +329,9 @@ export const purchaseEpin = async (req, res) => {
 
             const data = await response.json();
 
+            // ✅ ADD LOGGING FOR PURCHASE RESPONSE
+            console.log(`\n📌 VTPass E-pin purchase response for ${category.toUpperCase()}:`, JSON.stringify(data, null, 2));
+
             // 11. Handle VTpass response - check for success
             const isSuccess = data.code === "000" ||
                 data.code === 0 ||
@@ -346,6 +358,8 @@ export const purchaseEpin = async (req, res) => {
                     // Some services return cards array
                     pins = data.cards.map(card => encryptPin(card.SerialNumber || card.Pin));
                 }
+
+                console.log(`✅ E-pin purchase successful. ${pins.length} PIN(s) generated.`);
 
                 // Deduct wallet
                 user.walletBalance -= amount;
