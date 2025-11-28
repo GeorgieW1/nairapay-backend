@@ -64,6 +64,22 @@ export const getEpinPlans = async (req, res) => {
             });
         }
 
+        // Get credentials first (needed for all API calls including debug)
+        const staticKeyCred = integration.credentials.find(c =>
+            c.label && c.label.toLowerCase().includes("static"));
+        const publicKeyCred = integration.credentials.find(c =>
+            c.label && c.label.toLowerCase().includes("public"));
+
+        const staticKey = staticKeyCred?.value;
+        const publicKey = publicKeyCred?.value;
+
+        if (!staticKey || !publicKey) {
+            return res.status(503).json({
+                success: false,
+                error: "VTpass credentials not configured properly"
+            });
+        }
+
         // Map category to VTpass serviceID
         // Based on VTPass API - Only WAEC is confirmed working
         const serviceIDMap = {
@@ -112,22 +128,6 @@ export const getEpinPlans = async (req, res) => {
                 success: false,
                 error: `${category.toUpperCase()} E-pin is not currently supported. Only WAEC is available.`,
                 supportedCategories: ["WAEC"]
-            });
-        }
-
-        // Get credentials
-        const staticKeyCred = integration.credentials.find(c =>
-            c.label && c.label.toLowerCase().includes("static"));
-        const publicKeyCred = integration.credentials.find(c =>
-            c.label && c.label.toLowerCase().includes("public"));
-
-        const staticKey = staticKeyCred?.value;
-        const publicKey = publicKeyCred?.value;
-
-        if (!staticKey || !publicKey) {
-            return res.status(503).json({
-                success: false,
-                error: "VTpass credentials not configured properly"
             });
         }
 
