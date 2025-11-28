@@ -25,5 +25,6 @@ router.post("/tv/subscribe", subscribeTVService);
 // E-pin routes
 router.get("/epin/plans/:category", getEpinPlans);
 router.post("/epin/purchase", purchaseEpin);
+router.post("/epin", purchaseEpin); // ✅ Alternative route for backward compatibility
 
 export default router;
