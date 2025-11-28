@@ -95,9 +95,9 @@ export const getEpinPlans = async (req, res) => {
             console.log(`📋 Fetching all VTPass services to find correct service ID...`);
             
             try {
-                // Fetch all services from VTPass
+                // Fetch all service categories from VTPass
                 const allServicesResponse = await fetch(
-                    `${integration.baseUrl}/services`,
+                    `${integration.baseUrl}/service-categories`,
                     {
                         method: 'GET',
                         headers: {
@@ -107,18 +107,23 @@ export const getEpinPlans = async (req, res) => {
                     }
                 );
                 const allServices = await allServicesResponse.json();
-                console.log(`\n📚 All VTPass services:`, JSON.stringify(allServices, null, 2));
+                console.log(`\n📚 All VTPass service categories:`, JSON.stringify(allServices, null, 2));
                 
                 // Filter for E-pin related services
-                if (allServices.content) {
+                if (Array.isArray(allServices.content)) {
                     const epinServices = allServices.content.filter(s => 
                         s.name?.toLowerCase().includes('epin') ||
                         s.name?.toLowerCase().includes('pin') ||
                         s.name?.toLowerCase().includes('result') ||
                         s.name?.toLowerCase().includes('checker') ||
+                        s.name?.toLowerCase().includes('waec') ||
+                        s.name?.toLowerCase().includes('neco') ||
+                        s.name?.toLowerCase().includes('jamb') ||
                         s.serviceID?.toLowerCase().includes(category.toLowerCase())
                     );
-                    console.log(`\n🎯 E-pin related services:`, JSON.stringify(epinServices, null, 2));
+                    console.log(`\n🎯 E-pin/Exam related services found (${epinServices.length}):`, JSON.stringify(epinServices, null, 2));
+                } else {
+                    console.log(`⚠️ Content is not an array:`, typeof allServices.content);
                 }
             } catch (debugError) {
                 console.log(`❌ Failed to fetch all services:`, debugError.message);
