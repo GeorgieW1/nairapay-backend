@@ -201,6 +201,16 @@ export const getTVPlans = async (req, res) => {
 
         const data = await response.json();
 
+        // Log VTPass response for debugging
+        if (req.log) {
+            req.log.info({
+                provider: serviceID,
+                vtpassCode: data.code,
+                vtpassResponse: data.response_description,
+                hasVariations: !!(data.content && data.content.varations)
+            }, "VTPass TV plans API response");
+        }
+
         if (data.content && data.content.varations) {
             const plans = data.content.varations.map(plan => ({
                 code: plan.variation_code,
@@ -215,9 +225,14 @@ export const getTVPlans = async (req, res) => {
                 plans
             });
         } else {
+            // Log the actual error from VTPass
+            if (req.log) {
+                req.log.error({ vtpassData: data }, "VTPass returned no variations");
+            }
             return res.status(400).json({
                 success: false,
-                error: "Failed to fetch TV plans",
+                error: data.response_description || "Failed to fetch TV plans",
+                vtpassError: data
             });
         }
 
