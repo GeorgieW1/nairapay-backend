@@ -341,7 +341,10 @@ export const purchaseEpin = async (req, res) => {
                 let pins = [];
 
                 // VTpass returns PINs in different formats depending on the service
-                if (data.purchased_code) {
+                if (data.cards && Array.isArray(data.cards)) {
+                    // WAEC returns cards array with Serial and Pin
+                    pins = data.cards.map(card => encryptPin(card.Pin || card.pin));
+                } else if (data.purchased_code) {
                     // Single PIN
                     pins.push(encryptPin(data.purchased_code));
                 } else if (data.content && data.content.transactions) {
@@ -350,9 +353,6 @@ export const purchaseEpin = async (req, res) => {
                     if (Array.isArray(transactions)) {
                         pins = transactions.map(t => encryptPin(t.token || t.pin || t.code));
                     }
-                } else if (data.cards && Array.isArray(data.cards)) {
-                    // Some services return cards array
-                    pins = data.cards.map(card => encryptPin(card.SerialNumber || card.Pin));
                 }
 
                 console.log(`✅ E-pin purchase successful. ${pins.length} PIN(s) generated.`);
@@ -374,7 +374,8 @@ export const purchaseEpin = async (req, res) => {
                             transactionId: data.transactionId,
                             message: data.response_description
                         },
-                        vtpassTransactionId: data.requestId || data.transactionId
+                        vtpassTransactionId: data.requestId || data.transactionId,
+                        cards: data.cards // Store full card details (Serial + Pin)
                     }
                 });
 
