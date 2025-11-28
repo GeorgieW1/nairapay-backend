@@ -21,7 +21,6 @@ router.post("/electricity", payElectricity);
 router.post("/tv/verify", verifySmartcard);
 router.get("/tv/plans/:provider", getTVPlans);
 router.post("/tv/subscribe", subscribeTVService);
-router.post("/tv", subscribeTVService); // Backward compatibility - same as /tv/subscribe
 
 // E-pin routes
 router.get("/epin/plans/:category", getEpinPlans);
