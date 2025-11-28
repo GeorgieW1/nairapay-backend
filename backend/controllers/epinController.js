@@ -65,10 +65,11 @@ export const getEpinPlans = async (req, res) => {
         }
 
         // Map category to VTpass serviceID
+        // Based on VTPass API documentation
         const serviceIDMap = {
-            "WAEC": "waec",
-            "JAMB": "jamb",
-            "NECO": "neco"
+            "WAEC": "waec",           // ✅ Confirmed working
+            "JAMB": "jamb-utme",      // JAMB UTME registration
+            "NECO": "neco-token"      // NECO result checker token
         };
 
         const serviceID = serviceIDMap[category.toUpperCase()];
@@ -250,10 +251,11 @@ export const purchaseEpin = async (req, res) => {
         }
 
         // 6. Map category to VTpass serviceID
+        // Based on VTPass API documentation
         const serviceIDMap = {
-            "WAEC": "waec",
-            "JAMB": "jamb",
-            "NECO": "neco"
+            "WAEC": "waec",           // ✅ Confirmed working
+            "JAMB": "jamb-utme",      // JAMB UTME registration
+            "NECO": "neco-token"      // NECO result checker token
         };
 
         const serviceID = serviceIDMap[category.toUpperCase()];
