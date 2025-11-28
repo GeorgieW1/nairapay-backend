@@ -3,6 +3,7 @@ import Transaction from "../models/Transaction.js";
 import Integration from "../models/Integration.js";
 import fetch from "node-fetch";
 import crypto from "crypto";
+import { sendEpinEmail } from "../services/emailService.js";
 
 // Simple encryption for storing PINs
 const ENCRYPTION_KEY = process.env.EPIN_ENCRYPTION_KEY || "nairapay-epin-secret-key-change-in-production";
@@ -300,6 +301,7 @@ export const purchaseEpin = async (req, res) => {
             const vtpassPayload = {
                 request_id: requestId,
                 serviceID: serviceID,
+                variation_code: "waecdirect", // WAEC requires this variation code
                 quantity: quantity.toString(),
                 amount: amount.toString(),
                 phone: phone || user.phone || ""
@@ -378,6 +380,10 @@ export const purchaseEpin = async (req, res) => {
 
                 // Decrypt PINs for response (don't store decrypted)
                 const decryptedPins = pins.map(pin => decryptPin(pin));
+
+                // Send email with PINs (async, don't wait for it)
+                sendEpinEmail(user.email, decryptedPins, category, user.fullName || user.name)
+                    .catch(err => console.error('Failed to send E-pin email:', err));
 
                 return res.status(200).json({
                     success: true,
