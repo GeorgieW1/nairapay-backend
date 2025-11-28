@@ -5,25 +5,25 @@ dotenv.config();
 
 // Create reusable transporter
 const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST || 'smtp.gmail.com',
-    port: process.env.SMTP_PORT || 465,
-    secure: true, // true for 465, false for other ports
-    auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASSWORD
-    }
+  host: process.env.SMTP_HOST || 'smtp.gmail.com',
+  port: process.env.SMTP_PORT || 465,
+  secure: true, // true for 465, false for other ports
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASSWORD
+  }
 });
 
 /**
  * Send OTP email for email verification
  */
 export const sendOTPEmail = async (email, otp, fullName = 'User') => {
-    try {
-        const mailOptions = {
-            from: `"NairaPay" <${process.env.SMTP_USER}>`,
-            to: email,
-            subject: '✉️ Email Verification Code - NairaPay',
-            html: `
+  try {
+    const mailOptions = {
+      from: `"NairaPay" <${process.env.SMTP_USER}>`,
+      to: email,
+      subject: '✉️ Email Verification Code - NairaPay',
+      html: `
         <!DOCTYPE html>
         <html>
         <head>
@@ -63,27 +63,27 @@ export const sendOTPEmail = async (email, otp, fullName = 'User') => {
         </body>
         </html>
       `
-        };
+    };
 
-        await transporter.sendMail(mailOptions);
-        console.log('✅ OTP email sent to:', email);
-        return { success: true };
-    } catch (error) {
-        console.error('❌ Failed to send OTP email:', error);
-        return { success: false, error: error.message };
-    }
+    await transporter.sendMail(mailOptions);
+    console.log('✅ OTP email sent to:', email);
+    return { success: true };
+  } catch (error) {
+    console.error('❌ Failed to send OTP email:', error);
+    return { success: false, error: error.message };
+  }
 };
 
 /**
  * Send transaction receipt email
  */
 export const sendTransactionReceipt = async (email, transaction, user) => {
-    try {
-        const mailOptions = {
-            from: `"NairaPay" <${process.env.SMTP_USER}>`,
-            to: email,
-            subject: `✅ Transaction Receipt - ${transaction.type.toUpperCase()}`,
-            html: `
+  try {
+    const mailOptions = {
+      from: `"NairaPay" <${process.env.SMTP_USER}>`,
+      to: email,
+      subject: `✅ Transaction Receipt - ${transaction.type.toUpperCase()}`,
+      html: `
         <!DOCTYPE html>
         <html>
         <head>
@@ -148,33 +148,33 @@ export const sendTransactionReceipt = async (email, transaction, user) => {
         </body>
         </html>
       `
-        };
+    };
 
-        await transporter.sendMail(mailOptions);
-        console.log('✅ Receipt email sent to:', email);
-        return { success: true };
-    } catch (error) {
-        console.error('❌ Failed to send receipt email:', error);
-        return { success: false, error: error.message };
-    }
+    await transporter.sendMail(mailOptions);
+    console.log('✅ Receipt email sent to:', email);
+    return { success: true };
+  } catch (error) {
+    console.error('❌ Failed to send receipt email:', error);
+    return { success: false, error: error.message };
+  }
 };
 
 /**
  * Send admin alert email for new transactions
  */
 export const sendAdminAlert = async (transaction, user) => {
-    try {
-        const adminEmail = process.env.ADMIN_EMAIL;
-        if (!adminEmail) {
-            console.warn('⚠️ ADMIN_EMAIL not configured, skipping admin alert');
-            return { success: false, error: 'Admin email not configured' };
-        }
+  try {
+    const adminEmail = process.env.ADMIN_EMAIL;
+    if (!adminEmail) {
+      console.warn('⚠️ ADMIN_EMAIL not configured, skipping admin alert');
+      return { success: false, error: 'Admin email not configured' };
+    }
 
-        const mailOptions = {
-            from: `"NairaPay Alerts" <${process.env.SMTP_USER}>`,
-            to: adminEmail,
-            subject: `🔔 New Transaction Alert - ${transaction.type.toUpperCase()}`,
-            html: `
+    const mailOptions = {
+      from: `"NairaPay Alerts" <${process.env.SMTP_USER}>`,
+      to: adminEmail,
+      subject: `🔔 New Transaction Alert - ${transaction.type.toUpperCase()}`,
+      html: `
         <!DOCTYPE html>
         <html>
         <head>
@@ -207,13 +207,88 @@ export const sendAdminAlert = async (transaction, user) => {
         </body>
         </html>
       `
-        };
+    };
 
-        await transporter.sendMail(mailOptions);
-        console.log('✅ Admin alert sent');
-        return { success: true };
-    } catch (error) {
-        console.error('❌ Failed to send admin alert:', error);
-        return { success: false, error: error.message };
-    }
+    await transporter.sendMail(mailOptions);
+    console.log('✅ Admin alert sent');
+    return { success: true };
+  } catch (error) {
+    console.error('❌ Failed to send admin alert:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+/**
+ * Send E-pin purchase email
+ */
+export const sendEpinEmail = async (email, pins, category, fullName = 'User') => {
+  try {
+    const pinListHtml = pins.map((pin, index) => `
+            <div style="background: #f0f4f8; padding: 15px; margin: 10px 0; border-radius: 8px; border-left: 4px solid #667eea;">
+                <p style="margin: 0; font-size: 12px; color: #666;">PIN ${index + 1}</p>
+                <p style="margin: 5px 0 0 0; font-size: 24px; font-weight: bold; letter-spacing: 2px; color: #333;">${pin}</p>
+            </div>
+        `).join('');
+
+    const instructions = {
+      'WAEC': 'Visit <a href="https://www.waecdirect.org" target="_blank">www.waecdirect.org</a> to check your results.',
+      'NECO': 'Visit <a href="https://result.neco.gov.ng" target="_blank">result.neco.gov.ng</a> to check your results.',
+      'JAMB': 'Visit <a href="https://portal.jamb.gov.ng/efacility" target="_blank">portal.jamb.gov.ng</a> to check your results.'
+    };
+
+    const instructionText = instructions[category.toUpperCase()] || 'Visit the official exam body website to use your PIN.';
+
+    const mailOptions = {
+      from: `"NairaPay" <${process.env.SMTP_USER}>`,
+      to: email,
+      subject: `🎓 Your ${category.toUpperCase()} E-pin Purchase - NairaPay`,
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+            .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+            .footer { text-align: center; margin-top: 20px; font-size: 12px; color: #999; }
+            .btn { display: inline-block; background: #667eea; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin-top: 15px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>🎓 E-pin Purchase Successful</h1>
+            </div>
+            <div class="content">
+              <h2>Hello ${fullName}!</h2>
+              <p>Here are your purchased ${category.toUpperCase()} E-pins:</p>
+              
+              ${pinListHtml}
+              
+              <div style="background: #fff; padding: 15px; border-radius: 8px; margin-top: 20px; border: 1px solid #eee;">
+                <h3 style="margin-top: 0; color: #667eea;">How to use:</h3>
+                <p>${instructionText}</p>
+              </div>
+
+              <p style="margin-top: 30px; font-size: 14px; color: #666;">
+                Thank you for choosing NairaPay!
+              </p>
+            </div>
+            <div class="footer">
+              <p>&copy; ${new Date().getFullYear()} NairaPay. All rights reserved.</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `
+    };
+
+    await transporter.sendMail(mailOptions);
+    console.log('✅ E-pin email sent to:', email);
+    return { success: true };
+  } catch (error) {
+    console.error('❌ Failed to send E-pin email:', error);
+    return { success: false, error: error.message };
+  }
 };
