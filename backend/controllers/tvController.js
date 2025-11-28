@@ -371,64 +371,6 @@ export const subscribeTVService = async (req, res) => {
         } catch (error) {
             console.error('VTpass API Error:', error);
 
-        });
-        clearTimeout(timeoutId);
-
-        const data = await response.json();
-
-        // 11. Handle VTpass response - check for success
-        const isSuccess = data.code === "000" ||
-            data.code === 0 ||
-            (data.response_description &&
-                data.response_description.toLowerCase().includes("successful")) ||
-            (data.content && data.content.transactions) ||
-            data.status === "delivered";
-
-        if (isSuccess) {
-            // Success
-            user.walletBalance -= amount;
-            await user.save();
-
-            await Transaction.findByIdAndUpdate(transaction._id, {
-                status: "completed",
-                balanceAfter: user.walletBalance,
-                reference: data.transactionId || requestId,
-                metadata: {
-                    ...transaction.metadata,
-                    vtpassResponse: data,
-                    vtpassTransactionId: data.requestId || data.transactionId
-                }
-            });
-
-            return res.status(200).json({
-                success: true,
-                message: "TV subscription successful",
-                transaction: {
-                    id: transaction._id,
-                    amount,
-                    smartcardNumber: cleanSmartcard,
-                    provider: provider.toUpperCase(),
-                    bouquet: bouquetCode,
-                    date: new Date()
-                },
-                newBalance: user.walletBalance
-            });
-        } else {
-            // VTpass returned an error
-            await Transaction.findByIdAndUpdate(transaction._id, {
-                status: "failed",
-                error: data.response_description || "Subscription failed"
-            });
-
-            return res.status(400).json({
-                success: false,
-                error: data.response_description || "Failed to process TV subscription",
-                code: data.code
-            });
-        }
-    } catch (error) {
-        console.error('VTpass API Error:', error);
-
         await Transaction.findByIdAndUpdate(transaction._id, {
             status: "failed",
             error: error.message || "Failed to process subscription with VTpass"
