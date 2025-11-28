@@ -95,9 +95,10 @@ export const getEpinPlans = async (req, res) => {
             console.log(`📋 Fetching all VTPass services to find correct service ID...`);
             
             try {
-                // Fetch all service categories from VTPass
-                const allServicesResponse = await fetch(
-                    `${integration.baseUrl}/service-categories`,
+                // E-pins are in the "education" category - fetch all education services
+                console.log(`📚 Fetching education services from VTPass...`);
+                const educationServicesResponse = await fetch(
+                    `${integration.baseUrl}/service-categories?identifier=education`,
                     {
                         method: 'GET',
                         headers: {
@@ -106,12 +107,12 @@ export const getEpinPlans = async (req, res) => {
                         }
                     }
                 );
-                const allServices = await allServicesResponse.json();
-                console.log(`\n📚 All VTPass service categories:`, JSON.stringify(allServices, null, 2));
+                const educationServices = await educationServicesResponse.json();
+                console.log(`\n🎓 Education services:`, JSON.stringify(educationServices, null, 2));
                 
-                // Filter for E-pin related services
-                if (Array.isArray(allServices.content)) {
-                    const epinServices = allServices.content.filter(s => 
+                // Filter for E-pin/exam related services
+                if (Array.isArray(educationServices.content)) {
+                    const examServices = educationServices.content.filter(s => 
                         s.name?.toLowerCase().includes('epin') ||
                         s.name?.toLowerCase().includes('pin') ||
                         s.name?.toLowerCase().includes('result') ||
@@ -121,12 +122,15 @@ export const getEpinPlans = async (req, res) => {
                         s.name?.toLowerCase().includes('jamb') ||
                         s.serviceID?.toLowerCase().includes(category.toLowerCase())
                     );
-                    console.log(`\n🎯 E-pin/Exam related services found (${epinServices.length}):`, JSON.stringify(epinServices, null, 2));
+                    console.log(`\n🎯 Exam/E-pin services found (${examServices.length}):`, JSON.stringify(examServices, null, 2));
+                    
+                    // Show all education services for reference
+                    console.log(`\n📋 All education service IDs:`, educationServices.content.map(s => s.serviceID).join(', '));
                 } else {
-                    console.log(`⚠️ Content is not an array:`, typeof allServices.content);
+                    console.log(`⚠️ Content is not an array:`, typeof educationServices.content);
                 }
             } catch (debugError) {
-                console.log(`❌ Failed to fetch all services:`, debugError.message);
+                console.log(`❌ Failed to fetch education services:`, debugError.message);
             }
             
             return res.status(400).json({
