@@ -2,6 +2,7 @@ import User from "../models/User.js";
 import Transaction from "../models/Transaction.js";
 import Integration from "../models/Integration.js";
 import fetch from "node-fetch";
+import { sendTransactionNotification } from "../services/pushNotificationService.js";
 
 /**
  * Verify Smartcard Number
@@ -341,6 +342,10 @@ export const subscribeTVService = async (req, res) => {
                         vtpassResponse: data
                     }
                 });
+
+                // Send push notification (async)
+                sendTransactionNotification(user._id, 'tv', amount, 'completed')
+                    .catch(err => console.error('Failed to send push notification:', err));
 
                 return res.status(200).json({
                     success: true,
