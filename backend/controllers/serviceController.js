@@ -4,6 +4,7 @@ import ApiKey from "../models/ApiKey.js";
 import Integration from "../models/Integration.js";
 import fetch from "node-fetch";
 import { sendTransactionNotification } from "../services/pushNotificationService.js";
+import { sendTransactionReceipt, sendAdminAlert } from "../services/emailService.js";
 
 /**
  * Buy Airtime
@@ -216,6 +217,14 @@ export const buyAirtime = async (req, res) => {
         // Send push notification (async)
         sendTransactionNotification(user._id, 'airtime', amount, 'completed')
           .catch(err => console.error('Failed to send push notification:', err));
+
+        // Send email receipt to user (async)
+        sendTransactionReceipt(user.email, transaction, user)
+          .catch(err => console.error('Failed to send receipt email:', err));
+
+        // Send admin alert (async)
+        sendAdminAlert(transaction, user)
+          .catch(err => console.error('Failed to send admin alert:', err));
 
         res.json({
           success: true,
@@ -575,6 +584,14 @@ export const buyData = async (req, res) => {
         sendTransactionNotification(user._id, 'data', amount, 'completed')
           .catch(err => console.error('Failed to send push notification:', err));
 
+        // Send email receipt to user (async)
+        sendTransactionReceipt(user.email, transaction, user)
+          .catch(err => console.error('Failed to send receipt email:', err));
+
+        // Send admin alert (async)
+        sendAdminAlert(transaction, user)
+          .catch(err => console.error('Failed to send admin alert:', err));
+
         res.json({
           success: true,
           message: "Data purchased successfully",
@@ -848,6 +865,14 @@ export const payElectricity = async (req, res) => {
         // Send push notification (async)
         sendTransactionNotification(user._id, 'electricity', amount, 'completed')
           .catch(err => console.error('Failed to send push notification:', err));
+
+        // Send email receipt to user (async)
+        sendTransactionReceipt(user.email, transaction, user)
+          .catch(err => console.error('Failed to send receipt email:', err));
+
+        // Send admin alert (async)
+        sendAdminAlert(transaction, user)
+          .catch(err => console.error('Failed to send admin alert:', err));
 
         return res.status(200).json({
           success: true,
