@@ -3,7 +3,7 @@ import Transaction from "../models/Transaction.js";
 import Integration from "../models/Integration.js";
 import fetch from "node-fetch";
 import crypto from "crypto";
-import { sendEpinEmail } from "../services/emailService.js";
+import { sendEpinEmail, sendTransactionReceipt, sendAdminAlert } from "../services/emailService.js";
 import { sendTransactionNotification } from "../services/pushNotificationService.js";
 
 // Simple encryption for storing PINs
@@ -390,6 +390,10 @@ export const purchaseEpin = async (req, res) => {
                 // Send push notification (async)
                 sendTransactionNotification(user._id, 'epin', amount, 'completed')
                     .catch(err => console.error('Failed to send push notification:', err));
+
+                // Send admin alert (async)
+                sendAdminAlert(transaction, user)
+                    .catch(err => console.error('Failed to send admin alert:', err));
 
                 return res.status(200).json({
                     success: true,
