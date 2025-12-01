@@ -18,6 +18,7 @@ import walletRoutes from "./routes/walletRoutes.js";
 import transactionRoutes from "./routes/transactionRoutes.js";
 import serviceRoutes from "./routes/serviceRoutes.js";
 import dataRoutes from "./routes/dataRoutes.js";
+import notificationRoutes from "./routes/notificationRoutes.js";
 
 dotenv.config();
 
@@ -142,6 +143,7 @@ app.use("/api/wallet", walletRoutes);
 app.use("/api/transactions", transactionRoutes);
 app.use("/api/services", serviceRoutes);
 app.use("/api/data", dataRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 // Initialize server (for non-serverless deployments)
 const startServer = async () => {
