@@ -435,6 +435,34 @@ router.get("/analytics", verifyAdmin, async (req, res) => {
   }
 });
 
+// 🔍 Debug: Check VTPass integrations in database
+router.get("/integrations/debug-vtpass", verifyAdmin, async (req, res) => {
+  try {
+    const integrations = await Integration.find({
+      providerName: { $regex: /vtpass/i }
+    });
+    
+    const masked = integrations.map(i => ({
+      _id: i._id,
+      category: i.category,
+      mode: i.mode,
+      baseUrl: i.baseUrl,
+      credentialLabels: i.credentials.map(c => c.label),
+      hasStaticKey: i.credentials.some(c => c.label?.toLowerCase().includes("static")),
+      hasPublicKey: i.credentials.some(c => c.label?.toLowerCase().includes("public")),
+      hasSecretKey: i.credentials.some(c => c.label?.toLowerCase().includes("secret"))
+    }));
+    
+    res.json({
+      success: true,
+      count: integrations.length,
+      integrations: masked
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // 4️⃣ Test VTpass Connection
 router.post("/integrations/test-vtpass", verifyAdmin, async (req, res) => {
   try {
@@ -458,50 +486,50 @@ router.post("/integrations/test-vtpass", verifyAdmin, async (req, res) => {
       });
     }
     
-    // Get all three keys from credentials array
+    // Get static key from credentials array
     const staticKeyCred = integration.credentials.find(c => 
       c.label && c.label.toLowerCase().includes("static"));
-    const publicKeyCred = integration.credentials.find(c => 
-      c.label && c.label.toLowerCase().includes("public"));
     
     const staticKey = staticKeyCred?.value;
-    const publicKey = publicKeyCred?.value;
     
-    if (!staticKey || !publicKey) {
+    if (!staticKey) {
       return res.status(400).json({
         success: false,
-        message: `Missing credentials. Found: ${integration.credentials.map(c => c.label).join(", ")}`,
-        hint: "VTPass requires: Static Key, Public Key (PK_...), and Secret Key (SK_...)"
+        message: `Missing Static Key. Found: ${integration.credentials.map(c => c.label).join(", ")}`,
+        hint: "VTPass requires at least a Static Key (api-key)"
       });
     }
     
-    // Test with VTpass balance endpoint
-    // GET requests use: api-key (static) + public-key (PK_)
+    // Test with VTpass service-variations endpoint (same as working test script)
+    // Use api-key and secret-key headers (both can be the static key for GET requests)
     const fetch = (await import('node-fetch')).default;
-    const response = await fetch(`${integration.baseUrl}/balance`, {
+    const response = await fetch(`${integration.baseUrl}/service-variations?serviceID=mtn`, {
       method: "GET",
       headers: {
         "api-key": staticKey,
-        "public-key": publicKey
+        "secret-key": staticKey
       }
     });
     
     const data = await response.json();
     
-    // VTPass returns code: 1 for successful balance check, "000" for purchases
-    if (data.code === 1 || data.code === "000" || data.response_description?.toLowerCase().includes("successful")) {
+    // VTPass connection is successful if we get a 200 response
+    // Code "011" means "No Variations" which is fine - it means API is working
+    // Code "000" means successful transaction
+    // Code "087" means invalid credentials
+    if (response.ok && data.code !== "087") {
       res.json({
         success: true,
-        message: `✅ VTpass connection successful! Balance: ₦${data.contents?.balance || data.content?.balance || "N/A"}`,
+        message: `✅ VTpass connection successful!`,
         mode: integration.mode,
-        balance: data.contents?.balance || data.content?.balance || "N/A",
+        apiResponse: data.code,
         response: data
       });
     } else {
       res.status(400).json({
         success: false,
         message: "VTpass connection failed",
-        error: data.response_description || data.message || "Unknown error",
+        error: data.response_description || data.content?.errors || data.message || "Unknown error",
         code: data.code,
         hint: data.code === "087" ? "Invalid credentials. Check if keys are activated on VTPass dashboard." : undefined
       });
