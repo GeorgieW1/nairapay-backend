@@ -1,18 +1,25 @@
 import admin from 'firebase-admin';
 import User from '../models/User.js';
 
-// Initialize Firebase Admin SDK
+// Check if Firebase is already initialized
 let firebaseInitialized = false;
 
 const initializeFirebase = () => {
   if (firebaseInitialized) return true;
   
   try {
+    // Check if Firebase is already initialized by server.js
+    if (admin.apps.length > 0) {
+      console.log('✅ Firebase already initialized - using existing instance');
+      firebaseInitialized = true;
+      return true;
+    }
+
+    // Only initialize if not already done
     if (!process.env.FIREBASE_PROJECT_ID || 
         !process.env.FIREBASE_PRIVATE_KEY || 
         !process.env.FIREBASE_CLIENT_EMAIL) {
       console.log('⚠️  Firebase not configured - Push notifications disabled');
-      console.log('   Set FIREBASE_PROJECT_ID, FIREBASE_PRIVATE_KEY, FIREBASE_CLIENT_EMAIL');
       return false;
     }
 
@@ -25,7 +32,7 @@ const initializeFirebase = () => {
     });
     
     firebaseInitialized = true;
-    console.log('✅ Firebase Admin SDK initialized');
+    console.log('✅ Firebase Admin SDK initialized for push notifications');
     return true;
   } catch (error) {
     console.error('❌ Firebase initialization error:', error.message);
