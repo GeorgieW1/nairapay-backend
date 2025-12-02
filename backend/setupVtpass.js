@@ -9,7 +9,7 @@ async function setupVtpass() {
   try {
     // Connect to database
     await mongoose.connect(process.env.MONGO_URI);
-    console.log('✅ Connected to database');
+    console.log('✅ Connected to database:', process.env.MONGO_URI?.substring(0, 50) + '...');
 
     // VTPass credentials - use the correct working credentials
     const VTPASS_CREDENTIALS = {
