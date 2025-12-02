@@ -486,77 +486,56 @@ router.post("/integrations/test-vtpass", verifyAdmin, async (req, res) => {
       });
     }
     
-    // Get static key from credentials array
+    // Get required keys from credentials array
     const staticKeyCred = integration.credentials.find(c => 
       c.label && c.label.toLowerCase().includes("static"));
+    const publicKeyCred = integration.credentials.find(c => 
+      c.label && c.label.toLowerCase().includes("public"));
     
     const staticKey = staticKeyCred?.value;
+    const publicKey = publicKeyCred?.value;
     
-    if (!staticKey) {
+    if (!staticKey || !publicKey) {
       return res.status(400).json({
         success: false,
-        message: `Missing Static Key. Found: ${integration.credentials.map(c => c.label).join(", ")}`,
-        hint: "VTPass requires at least a Static Key (api-key)"
+        message: `Missing credentials. Found: ${integration.credentials.map(c => c.label).join(", ")}`,
+        hint: "VTPass requires: Static Key (api-key) and Public Key (PK_...)"
       });
     }
     
     // Test with VTpass balance endpoint first (shows actual balance)
     const fetch = (await import('node-fetch')).default;
     
-    // Try balance endpoint first
-    let balanceResponse, balanceData;
-    try {
-      balanceResponse = await fetch(`${integration.baseUrl}/balance`, {
-        method: "GET",
-        headers: {
-          "api-key": staticKey,
-          "public-key": staticKey // Use static key for public-key too
-        }
-      });
-      balanceData = await balanceResponse.json();
-    } catch (error) {
-      balanceData = { code: "ERROR", message: error.message };
-    }
-
-    // If balance fails, try service-variations as fallback
-    let testResponse, testData;
-    if (!balanceResponse || !balanceResponse.ok || balanceData.code === "087") {
-      testResponse = await fetch(`${integration.baseUrl}/service-variations?serviceID=mtn`, {
-        method: "GET",
-        headers: {
-          "api-key": staticKey,
-          "secret-key": staticKey
-        }
-      });
-      testData = await testResponse.json();
-    }
-
-    // Determine success based on either endpoint
-    const isBalanceSuccess = balanceResponse?.ok && balanceData.code !== "087";
-    const isTestSuccess = testResponse?.ok && testData?.code !== "087";
+    // Test with service-variations endpoint using correct headers for GET request
+    const testResponse = await fetch(`${integration.baseUrl}/service-variations?serviceID=mtn`, {
+      method: "GET",
+      headers: {
+        "api-key": staticKey,      // Static key
+        "public-key": publicKey    // PK_ key for GET requests
+      }
+    });
     
-    if (isBalanceSuccess || isTestSuccess) {
-      const successData = isBalanceSuccess ? balanceData : testData;
-      const balance = balanceData?.contents?.balance || balanceData?.content?.balance;
-      
+    const testData = await testResponse.json();
+    
+    if (testResponse.ok && testData.code !== "087") {
       res.json({
         success: true,
         message: `✅ VTpass connection successful!`,
         mode: `${integration.mode.toUpperCase()} MODE`,
-        balance: balance ? `₦${balance}` : "N/A",
-        testMethod: isBalanceSuccess ? "Balance Check" : "Service Variations",
-        apiResponse: successData.code,
-        response: isBalanceSuccess ? balanceData : testData
+        balance: "Balance unavailable (credentials limited)",
+        testMethod: "Service Variations Check",
+        apiResponse: testData.code,
+        note: "API connection verified - ready for transactions",
+        response: testData
       });
     } else {
-      const errorData = balanceData.code === "087" ? balanceData : (testData || balanceData);
       res.status(400).json({
         success: false,
         message: "❌ VTpass connection failed",
         mode: `${integration.mode.toUpperCase()} MODE`,
-        error: errorData.response_description || errorData.content?.errors || errorData.message || "Unknown error",
-        code: errorData.code,
-        hint: errorData.code === "087" ? "Invalid credentials. Check if keys are activated on VTPass dashboard." : "Connection or API error"
+        error: testData.response_description || testData.content?.errors || testData.message || "Unknown error",
+        code: testData.code,
+        hint: testData.code === "087" ? "Invalid credentials. Check if keys are activated on VTPass dashboard." : "Connection or API error"
       });
     }
   } catch (error) {
