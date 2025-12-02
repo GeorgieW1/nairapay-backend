@@ -500,38 +500,63 @@ router.post("/integrations/test-vtpass", verifyAdmin, async (req, res) => {
       });
     }
     
-    // Test with VTpass service-variations endpoint (same as working test script)
-    // Use api-key and secret-key headers (both can be the static key for GET requests)
+    // Test with VTpass balance endpoint first (shows actual balance)
     const fetch = (await import('node-fetch')).default;
-    const response = await fetch(`${integration.baseUrl}/service-variations?serviceID=mtn`, {
-      method: "GET",
-      headers: {
-        "api-key": staticKey,
-        "secret-key": staticKey
-      }
-    });
     
-    const data = await response.json();
+    // Try balance endpoint first
+    let balanceResponse, balanceData;
+    try {
+      balanceResponse = await fetch(`${integration.baseUrl}/balance`, {
+        method: "GET",
+        headers: {
+          "api-key": staticKey,
+          "public-key": staticKey // Use static key for public-key too
+        }
+      });
+      balanceData = await balanceResponse.json();
+    } catch (error) {
+      balanceData = { code: "ERROR", message: error.message };
+    }
+
+    // If balance fails, try service-variations as fallback
+    let testResponse, testData;
+    if (!balanceResponse || !balanceResponse.ok || balanceData.code === "087") {
+      testResponse = await fetch(`${integration.baseUrl}/service-variations?serviceID=mtn`, {
+        method: "GET",
+        headers: {
+          "api-key": staticKey,
+          "secret-key": staticKey
+        }
+      });
+      testData = await testResponse.json();
+    }
+
+    // Determine success based on either endpoint
+    const isBalanceSuccess = balanceResponse?.ok && balanceData.code !== "087";
+    const isTestSuccess = testResponse?.ok && testData?.code !== "087";
     
-    // VTPass connection is successful if we get a 200 response
-    // Code "011" means "No Variations" which is fine - it means API is working
-    // Code "000" means successful transaction
-    // Code "087" means invalid credentials
-    if (response.ok && data.code !== "087") {
+    if (isBalanceSuccess || isTestSuccess) {
+      const successData = isBalanceSuccess ? balanceData : testData;
+      const balance = balanceData?.contents?.balance || balanceData?.content?.balance;
+      
       res.json({
         success: true,
         message: `✅ VTpass connection successful!`,
-        mode: integration.mode,
-        apiResponse: data.code,
-        response: data
+        mode: `${integration.mode.toUpperCase()} MODE`,
+        balance: balance ? `₦${balance}` : "N/A",
+        testMethod: isBalanceSuccess ? "Balance Check" : "Service Variations",
+        apiResponse: successData.code,
+        response: isBalanceSuccess ? balanceData : testData
       });
     } else {
+      const errorData = balanceData.code === "087" ? balanceData : (testData || balanceData);
       res.status(400).json({
         success: false,
-        message: "VTpass connection failed",
-        error: data.response_description || data.content?.errors || data.message || "Unknown error",
-        code: data.code,
-        hint: data.code === "087" ? "Invalid credentials. Check if keys are activated on VTPass dashboard." : undefined
+        message: "❌ VTpass connection failed",
+        mode: `${integration.mode.toUpperCase()} MODE`,
+        error: errorData.response_description || errorData.content?.errors || errorData.message || "Unknown error",
+        code: errorData.code,
+        hint: errorData.code === "087" ? "Invalid credentials. Check if keys are activated on VTPass dashboard." : "Connection or API error"
       });
     }
   } catch (error) {
