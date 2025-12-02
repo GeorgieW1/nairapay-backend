@@ -11,11 +11,11 @@ async function setupVtpass() {
     await mongoose.connect(process.env.MONGO_URI);
     console.log('✅ Connected to database');
 
-    // VTPass credentials - use static key for all (since it's the only working one)
+    // VTPass credentials - use the correct working credentials
     const VTPASS_CREDENTIALS = {
       staticKey: "b8bed9a093539a61f851a69ac53cb45e",
-      publicKey: "b8bed9a093539a61f851a69ac53cb45e", // Use static key
-      secretKey: "b8bed9a093539a61f851a69ac53cb45e"  // Use static key
+      publicKey: "PK_394bdd37d05020ef6b1c8b82be5af1e70b5768b5548",
+      secretKey: "SK_98879d3e8ffab5f682a973c61bb2b8eb064f7513221"
     };
 
     // Delete old VTpass integrations
