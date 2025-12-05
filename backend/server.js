@@ -23,22 +23,26 @@ import notificationRoutes from "./routes/notificationRoutes.js";
 dotenv.config();
 
 const app = express();
+
+// Trust Railway proxy (fixes X-Forwarded-For header issues)
+app.set('trust proxy', 1);
+
 // Structured logging with redaction
 app.use(pinoHttp({
-	logger,
-	redact: {
-		paths: [
-			"req.headers.authorization",
-			"req.headers.cookie",
-			"req.body.password",
-			"req.body.key",
-			"req.body.secret",
-			"res.body.token",
-			"res.body.key",
-			"res.body.secret",
-		],
-		remove: true,
-	},
+  logger,
+  redact: {
+    paths: [
+      "req.headers.authorization",
+      "req.headers.cookie",
+      "req.body.password",
+      "req.body.key",
+      "req.body.secret",
+      "res.body.token",
+      "res.body.key",
+      "res.body.secret",
+    ],
+    remove: true,
+  },
 }));
 // Security headers
 app.use(helmet());

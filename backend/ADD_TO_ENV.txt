@@ -1,0 +1,3 @@
+# Quick fix - Add this line to your .env file
+
+RESEND_API_KEY=re_91Cv2r7V_HNe2WvXScYVebpRW5hFrBew8
