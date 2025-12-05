@@ -1,0 +1,21 @@
+🧪 Testing VTPass credentials directly...
+
+📡 Testing VTPass /pay endpoint:
+API Key: b8bed9a093539a61f851a69ac53cb45e
+Secret Key: SK_98879d3e8ffab5f682a973c61bb2b8eb064f7513221
+Payload: {
+  "request_id": "test_1764848840168",
+  "serviceID": "airtel",
+  "amount": "100",
+  "phone": "09020795235"
+}
+
+Status: 401
+Response: {
+  "code": "087",
+  "message": "INVALID CREDENTIALS"
+}
+
+❌ CREDENTIALS ARE INVALID!
+The keys you provided are NOT valid VTpass credentials.
+They appear to be Paystack keys (PK_/SK_ prefix is Paystack format).

@@ -1,0 +1,43 @@
+🔍 VTpass Diagnostics
+
+API Key: b8bed9a093539a61f851a69ac53cb45e
+Public Key: PK_394bdd37d05020ef6b1c8b82be5af1e70b5768b5548
+Secret Key: SK_98879d3e8ffab5f682a973c61bb2b8eb064f7513221
+NaN
+
+1️⃣ GET /balance (LIVE):
+URL: https://vtpass.com/api/balance
+Headers: {"api-key":"b8bed9a093539a61f851a69ac53cb45e","public-key":"PK_394bdd37d05020ef6b1c8b82be5af1e70b5768b5548"}
+Status: 401
+Response: {
+  "code": "087",
+  "message": "INVALID CREDENTIALS"
+}
+
+2️⃣ POST /pay (LIVE):
+URL: https://vtpass.com/api/pay
+Headers: {"api-key":"b8bed9a093539a61f851a69ac53cb45e","secret-key":"SK_98879d3e8ffab5f682a973c61bb2b8eb064f7513221","Content-Type":"application/json"}
+Body: {"request_id":"test_1764849593162","serviceID":"mtn","amount":"50","phone":"08012345678"}
+Status: 401
+Response: {
+  "code": "087",
+  "message": "INVALID CREDENTIALS"
+}
+
+3️⃣ GET /balance (SANDBOX):
+URL: https://sandbox.vtpass.com/api/balance
+Headers: {"api-key":"b8bed9a093539a61f851a69ac53cb45e","public-key":"PK_394bdd37d05020ef6b1c8b82be5af1e70b5768b5548"}
+Status: 401
+Response: {
+  "code": "087",
+  "message": "INVALID CREDENTIALS"
+}
+
+NaN
+RESULTS:
+GET /balance (LIVE):    ❌ FAIL
+POST /pay (LIVE):       ❌ FAIL
+GET /balance (SANDBOX): ❌ FAIL
+NaN
+
+❌ ALL TESTS FAILED - Keys are invalid or account has issues
