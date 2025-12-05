@@ -4,25 +4,34 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-// Initialize Resend with API key
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Initialize Resend with API key (lazy initialization to avoid startup errors)
+let resend;
+try {
+  if (process.env.RESEND_API_KEY) {
+    resend = new Resend(process.env.RESEND_API_KEY);
+  }
+} catch (e) {
+  console.warn("⚠️ Resend API key missing or invalid on startup");
+}
 
 // Fallback to Nodemailer if RESEND_API_KEY not set (for local development)
 let nodemailerTransporter = null;
 if (!process.env.RESEND_API_KEY && process.env.SMTP_USER) {
-  const nodemailer = await import('nodemailer');
-  nodemailerTransporter = nodemailer.default.createTransport({
-    host: process.env.SMTP_HOST || 'smtp.gmail.com',
-    port: parseInt(process.env.SMTP_PORT) || 587,
-    secure: process.env.SMTP_SECURE === 'true',
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASSWORD
-    },
-    tls: {
-      rejectUnauthorized: false
-    }
-  });
+  // Dynamic import to avoid loading nodemailer if not needed
+  import('nodemailer').then(nodemailer => {
+    nodemailerTransporter = nodemailer.default.createTransport({
+      host: process.env.SMTP_HOST || 'smtp.gmail.com',
+      port: parseInt(process.env.SMTP_PORT) || 587,
+      secure: process.env.SMTP_SECURE === 'true',
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASSWORD
+      },
+      tls: {
+        rejectUnauthorized: false
+      }
+    });
+  }).catch(err => console.error("Failed to load nodemailer:", err));
 }
 
 /**
@@ -73,8 +82,18 @@ export const sendOTPEmail = async (email, otp, fullName = 'User') => {
 
     // Use Resend if API key is available (production), otherwise use Nodemailer (local)
     if (process.env.RESEND_API_KEY) {
+      // Ensure resend instance exists
+      if (!resend) {
+        try {
+          resend = new Resend(process.env.RESEND_API_KEY);
+        } catch (e) {
+          console.error("Failed to initialize Resend:", e);
+          return { success: false, error: "Resend initialization failed" };
+        }
+      }
+
       const { data, error } = await resend.emails.send({
-        from: 'NairaPay <nairapay.notifications@gmail.com>',
+        from: 'NairaPay <onboarding@resend.dev>',
         to: email,
         subject: '✉️ Email Verification Code - NairaPay',
         html: htmlContent
