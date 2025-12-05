@@ -1,0 +1,41 @@
+// ✅ Delete user - Add this to adminRoutes.js after the deduct wallet endpoint (around line 349)
+router.delete("/users/:id", verifyAdmin, async (req, res) => {
+  try {
+    const userId = req.params.id;
+    
+    // Prevent admin from deleting themselves
+    if (userId === req.user.id) {
+      return res.status(400).json({
+        success: false,
+        message: "Cannot delete your own account"
+      });
+    }
+    
+    const user = await User.findById(userId);
+    
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+    
+    // Prevent deleting other admins
+    if (user.role === "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "Cannot delete admin users. Change role first."
+      });
+    }
+    \n    // Delete user and their transactions
+    await Promise.all([
+      User.findByIdAndDelete(userId),
+      Transaction.deleteMany({ userId })
+    ]);
+    
+    res.json({
+      success: true,
+      message: `User ${user.name || user.email} deleted successfully`
+    });
+  } catch (error) {
+    if (req.log) req.log.error({ err: error }, "Error deleting user");
+    res.status(500).json({ success: false, message: "Failed to delete user" });
+  }
+});

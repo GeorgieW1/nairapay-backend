@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NairaPay Admin Dashboard</title>
+  <link rel="stylesheet" href="/style.css" />
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@600;700&display=swap');
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      display: flex;
+      height: 100vh;
+      background: #0a0e27;
+      background-image:
+        radial-gradient(at 20% 50%, rgba(34, 197, 94, 0.08) 0px, transparent 50%),
+        radial-gradient(at 80% 80%, rgba(59, 130, 246, 0.08) 0px, transparent 50%),
+        radial-gradient(at 40% 20%, rgba(168, 85, 247, 0.06) 0px, transparent 50%);
+      background-attachment: fixed;
+      color: #e5e7eb;
+    }
+
+    .sidebar {
+      width: 280px;
+      background: #111827;
+      border-right: 1px solid rgba(59, 130, 246, 0.1);
+      color: white;
+      padding: 32px 24px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      z-index: 10;
+      backdrop-filter: blur(20px);
+    }
+
+    .sidebar::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.3), transparent);
+    }
+
+    .sidebar h2 {
+      font-family: 'Space Grotesk', sans-serif;
+      text-align: left;
+      margin-bottom: 48px;
+      font-size: 1.75rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      background: linear-gradient(135deg, #3b82f6 0%, #22c55e 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      padding-left: 8px;
+    }
+
+    .sidebar ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .sidebar ul li {
+      margin-bottom: 6px;
+    }
+
+    .sidebar ul li a {
+      color: rgba(229, 231, 235, 0.7);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      border-radius: 10px;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      font-weight: 500;
+      font-size: 0.95rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .sidebar ul li a::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      height: 100%;
+      width: 3px;
+      background: #3b82f6;
+      transform: scaleY(0);
+      transition: transform 0.25s ease;
+    }
+
+    .sidebar ul li a:hover {
+      background: rgba(59, 130, 246, 0.08);
+      color: #e5e7eb;
+      transform: translateX(4px);
+    }
+
+    .sidebar ul li a:hover::before {
+      transform: scaleY(1);
+    }
+
+    .sidebar ul li a.active {
+      background: rgba(59, 130, 246, 0.15);
+      color: #3b82f6;
+      font-weight: 600;
+      border-left: 3px solid #3b82f6;
+    }
+
+    .sidebar ul li a.active::before {
+      transform: scaleY(1);
+    }
+
+    .main {
+      flex: 1;
+      padding: 48px 56px;
+      overflow-y: auto;
+      background: transparent;
+      height: 100vh;
+      position: relative;
+    }
+
+    section {
+      width: 100%;
+      overflow-y: auto;
+      max-height: calc(100vh - 100px);
+      padding-bottom: 40px;
+      display: block;
+    }
+
+    section h2 {
+      position: sticky;
+      top: 0;
+      background: #0a0e1a;
+      z-index: 10;
+      padding: 16px 0;
+      margin-top: 0;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    h1,
+    h2 {
+      color: #f9fafb;
+      margin-bottom: 32px;
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      border-bottom: 2px solid rgba(59, 130, 246, 0.3);
+      padding-bottom: 16px;
+      position: relative;
+    }
+
+    h1::after {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      left: 0;
+      width: 80px;
+      height: 2px;
+      background: linear-gradient(90deg, #3b82f6, #22c55e);
+    }
+
+    h2 {
+      font-size: 1.875rem;
+      margin-top: 16px;
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    h2::after {
+      display: none;
+    }
+
+    h4 {
+      color: #d1d5db;
+      margin-bottom: 20px;
+      font-size: 1.125rem;
+      font-weight: 600;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      margin-top: 32px;
+      background: #111827;
+      border: 1px solid rgba(59, 130, 246, 0.1);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    }
+
+    th,
+    td {
+      padding: 18px 20px;
+      text-align: left;
+      border-bottom: 1px solid rgba(59, 130, 246, 0.05);
+    }
+
+    th {
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      color: #e5e7eb;
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      letter-spacing: 1px;
+      font-family: 'Space Grotesk', sans-serif;
+      border-bottom: 2px solid rgba(59, 130, 246, 0.2);
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr:nth-child(even) {
+      background-color: rgba(59, 130, 246, 0.02);
+    }
+
+    tr:hover {
+      background-color: rgba(59, 130, 246, 0.08);
+      transition: background-color 0.2s;
+    }
+
+    td {
+      color: #d1d5db;
+    }
+
+    td button {
+      padding: 8px 16px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.85rem;
+      transition: all 0.2s;
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+      color: white;
+    }
+
+    td button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+    }
+
+    form {
+      background: #111827;
+      padding: 40px;
+      border-radius: 20px;
+      border: 1px solid rgba(59, 130, 246, 0.1);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+      margin-bottom: 40px;
+      width: 100%;
+      overflow: visible;
+    }
+
+    .form-group {
+      margin-bottom: 24px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 10px;
+      color: #e5e7eb;
+      font-weight: 600;
+      font-size: 0.9rem;
+      letter-spacing: 0.3px;
+    }
+
+    form input,
+    form select {
+      width: 100%;
+      padding: 14px 18px;
+      border-radius: 10px;
+      border: 1.5px solid rgba(59, 130, 246, 0.2);
+      background: #1e293b;
+      color: #e5e7eb;
+      font-size: 0.95rem;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      font-family: 'Inter', sans-serif;
+    }
+
+    form input::placeholder {
+      color: rgba(229, 231, 235, 0.4);
+    }
+
+    form input:focus,
+    form select:focus {
+      outline: none;
+      border-color: #3b82f6;
+      background: #1f2937;
+      box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+    }
+
+    form button {
+      padding: 14px 28px;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.95rem;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      margin-right: 12px;
+      margin-top: 12px;
+      font-family: 'Inter', sans-serif;
+    }
+
+    form button[type="submit"] {
+      background: linear-gradient(135deg, #3b82f6 0%, #22c55e 100%);
+      color: white;
+      box-shadow: 0 4px 20px rgba(59, 130, 246, 0.4);
+    }
+
+    form button[type="submit"]:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 28px rgba(59, 130, 246, 0.5);
+    }
+
+    form button[type="button"] {
+      background: #1e293b;
+      color: #e5e7eb;
+      border: 1.5px solid rgba(59, 130, 246, 0.2);
+    }
+
+    form button[type="button"]:hover {
+      background: #1f2937;
+      border-color: rgba(59, 130, 246, 0.4);
+    }
+
+    .credential-pair {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 14px;
+      align-items: center;
+    }
+
+    .credential-pair input.label {
+      flex: 0 0 200px;
+      font-weight: 600;
+      background: #0f172a;
+    }
+
+    .credential-pair input.value {
+      flex: 1;
+    }
+
+    .credential-pair .remove-btn {
+      padding: 10px 16px;
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .credential-pair .remove-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 16px rgba(239, 68, 68, 0.4);
+    }
+
+    .filters {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+      align-items: center;
+      background: #111827;
+      padding: 20px;
+      border-radius: 12px;
+      border: 1px solid rgba(59, 130, 246, 0.1);
+      flex-wrap: wrap;
+    }
+
+    .filters select,
+    .filters input {
+      padding: 12px 16px;
+      border-radius: 8px;
+      border: 1.5px solid rgba(59, 130, 246, 0.2);
+      background: #1e293b;
+      color: #e5e7eb;
+      font-size: 0.9rem;
+      transition: all 0.3s;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .filters select {
+      min-width: 150px;
+    }
+
+    .filters input {
+      flex: 1;
+      min-width: 200px;
+    }
+
+    .filters select:focus,
+    .filters input:focus {
+      outline: none;
+      border-color: #3b82f6;
+      background: #1f2937;
+      box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+    }
+
+    .filters button {
+      padding: 12px 20px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.9rem;
+      transition: all 0.3s;
+      font-family: 'Inter', sans-serif;
+    }
+
+    #applyFilters {
+      background: linear-gradient(135deg, #3b82f6 0%, #22c55e 100%);
+      color: white;
+      box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
+    }
+
+    #applyFilters:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+    }
+
+    #clearFilters {
+      background: #1e293b;
+      color: #e5e7eb;
+      border: 1.5px solid rgba(59, 130, 246, 0.2);
+    }
+
+    #clearFilters:hover {
+      background: #1f2937;
+      border-color: rgba(59, 130, 246, 0.4);
+    }
+
+    #transactionsPagination {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 16px;
+      margin-top: 24px;
+      padding: 20px;
+      background: #111827;
+      border-radius: 12px;
+      border: 1px solid rgba(59, 130, 246, 0.1);
+    }
+
+    #transactionsPagination button {
+      padding: 10px 20px;
+      border-radius: 8px;
+      border: 1.5px solid rgba(59, 130, 246, 0.2);
+      background: #1e293b;
+      color: #e5e7eb;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.3s;
+    }
+
+    #transactionsPagination button:hover:not(:disabled) {
+      background: #3b82f6;
+      border-color: #3b82f6;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+
+    #transactionsPagination button:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    #transactionsPagination span {
+      color: #e5e7eb;
+      font-weight: 600;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 20px;
+      margin-bottom: 32px;
+    }
+
+    .stat-card {
+      background: linear-gradient(135deg, #111827 0%, #1e293b 100%);
+      padding: 24px;
+      border-radius: 16px;
+      border: 1px solid rgba(59, 130, 246, 0.2);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      transition: all 0.3s;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 28px rgba(59, 130, 246, 0.3);
+      border-color: rgba(59, 130, 246, 0.4);
+    }
+
+    .stat-card h3 {
+      font-size: 0.85rem;
+      color: #9ca3af;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 12px;
+      font-weight: 600;
+    }
+
+    .stat-value {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #3b82f6;
+      margin: 8px 0;
+      font-family: 'Space Grotesk', sans-serif;
+    }
+
+    .stat-label {
+      font-size: 0.85rem;
+      color: #6b7280;
+      margin-top: 8px;
+    }
+
+    .analytics-section {
+      background: #111827;
+      padding: 28px;
+      border-radius: 16px;
+      border: 1px solid rgba(59, 130, 246, 0.1);
+      margin-bottom: 24px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .analytics-section h2 {
+      color: #e5e7eb;
+      font-size: 1.3rem;
+      margin-bottom: 20px;
+      font-weight: 700;
+      border-bottom: 2px solid rgba(59, 130, 246, 0.2);
+      padding-bottom: 12px;
+    }
+
+    #logoutBtn {
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+      border: none;
+      padding: 14px 24px;
+      color: white;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 600;
+      width: 100%;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 4px 20px rgba(239, 68, 68, 0.3);
+      font-family: 'Inter', sans-serif;
+    }
+
+    #logoutBtn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 28px rgba(239, 68, 68, 0.5);
+    }
+
+    table button {
+      padding: 8px 18px;
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    table button:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 16px rgba(239, 68, 68, 0.4);
+    }
+
+    #dashboardContent {
+      font-size: 1.25rem;
+      color: #d1d5db;
+      padding: 32px;
+      background: #111827;
+      border-radius: 16px;
+      border: 1px solid rgba(59, 130, 246, 0.1);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+      font-weight: 500;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    @media (max-width: 768px) {
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        width: 220px;
+        padding: 24px 16px;
+      }
+
+      .main {
+        padding: 32px 24px;
+      }
+
+      h1 {
+        font-size: 2rem;
+      }
+    }
+
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 10px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #111827;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: rgba(59, 130, 246, 0.3);
+      border-radius: 5px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(59, 130, 246, 0.5);
+    }
+  </style>
+</head>
+
+<body>
+  <!-- ===== Sidebar ===== -->
+  <div class="sidebar">
+    <div>
+      <h2>⚡ NairaPay</h2>
+      <ul>
+        <li><a href="#" id="dashboardBtn">📊 Dashboard</a></li>
+        <li><a href="#" id="transactionsBtn">💳 Transactions</a></li>
+        <li><a href="#" id="usersBtn">👥 Users</a></li>
+        <li><a href="#" id="integrationsBtn">🔌 Integrations</a></li>
+        <li><a href="#" id="paystackBtn">💰 Paystack Config</a></li>
+      </ul>
+    </div>
+    <button id="logoutBtn">🚪 Logout</button>
+  </div>
+
+  <!-- ===== Main Content ===== -->
+  <div class="main">
+    <!-- Dashboard Section -->
+    <section id="dashboardSection">
+      <h1>📊 Dashboard Analytics</h1>
+      <div id="dashboardContent">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <h3>Today's Revenue</h3>
+            <p class="stat-value" id="todayRevenue">₦0</p>
+            <p class="stat-label" id="todayTransactions">0 transactions</p>
+          </div>
+          <div class="stat-card">
+            <h3>Active Users</h3>
+            <p class="stat-value" id="activeUsers">0</p>
+            <p class="stat-label">Today</p>
+          </div>
+          <div class="stat-card">
+            <h3>Success Rate</h3>
+            <p class="stat-value" id="successRate">0%</p>
+            <p class="stat-label">Today</p>
+          </div>
+          <div class="stat-card">
+            <h3>Month Revenue</h3>
+            <p class="stat-value" id="monthRevenue">₦0</p>
+            <p class="stat-label" id="monthTransactions">0 transactions</p>
+          </div>
+        </div>
+
+        <div class="analytics-section">
+          <h2>Service Breakdown (This Month)</h2>
+          <div id="serviceBreakdown">Loading...</div>
+        </div>
+
+        <div class="analytics-section">
+          <h2>Top Users</h2>
+          <table id="topUsersTable">
+            <thead>
+              <tr>
+                <th>User</th>
+                <th>Email</th>
+                <th>Total Spent</th>
+                <th>Transactions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td colspan="4">Loading...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Transactions Section -->
+    <section id="transactionsSection" class="hidden">
+      <h2>💳 All Transactions</h2>
+
+      <div class="filters">
+        <select id="filterType">
+          <option value="">All Types</option>
+          <option value="credit">Wallet Funding</option>
+          <option value="debit">Deductions</option>
+          <option value="airtime">Airtime</option>
+          <option value="data">Data</option>
+          <option value="electricity">Electricity</option>
+          <option value="tv">TV Subscription</option>
+          <option value="epin">E-pin</option>
+        </select>
+
+        <select id="filterStatus">
+          <option value="">All Status</option>
+          <option value="completed">Completed</option>
+          <option value="pending">Pending</option>
+          <option value="failed">Failed</option>
+        </select>
+
+        <input type="text" id="searchTransactions" placeholder="Search by description or phone...">
+        <button id="applyFilters">Apply Filters</button>
+        <button id="clearFilters">Clear</button>
+      </div>
+
+      <table id="transactionsTable">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>User</th>
+            <th>Type</th>
+            <th>Amount</th>
+            <th>Status</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td colspan="6">Loading...</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div id="transactionsPagination"></div>
+    </section>
+
+    <!-- Users Section -->
+    <section id="usersSection" class="hidden">
+      <h2>Registered Users</h2>
+      <form id="fundWalletForm">
+        <div class="form-group">
+          <label for="fundUserSelect">Select User</label>
+          <select id="fundUserSelect" required>
+            <option value="" disabled selected>Select a user</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="fundAmount">Amount (NGN)</label>
+            <input type="number" id="fundAmount" placeholder="Enter amount" min="1" step="0.01" required />
+          </div>
+          <div class="form-group">
+            <label for="fundNote">Note (optional)</label>
+            <input type="text" id="fundNote" placeholder="Reason for funding" />
+          </div>
+        </div>
+        <button type="submit">💸 Fund Wallet</button>
+      </form>
+
+      <form id="deductWalletForm" style="margin-top: 20px;">
+        <h3>Deduct from Wallet</h3>
+        <div class="form-group">
+          <label for="deductUserSelect">Select User</label>
+          <select id="deductUserSelect" required>
+            <option value="" disabled selected>Select a user</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="deductAmount">Amount (NGN)</label>
+            <input type="number" id="deductAmount" placeholder="Enter amount" min="1" step="0.01" required />
+          </div>
+          <div class="form-group">
+            <label for="deductNote">Reason (optional)</label>
+            <input type="text" id="deductNote" placeholder="Reason for deduction" />
+          </div>
+        </div>
+        <button type="submit" style="background: #ef4444;">⚠️ Deduct from Wallet</button>
+      </form>
+
+      <table id="usersTable">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Wallet Balance</th>
+            <th>Date Joined</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <!-- Integrations Section -->
+    <section id="integrationsSection" class="hidden">
+      <h2>Service Integrations</h2>
+      <form id="addIntegrationForm">
+        <div class="form-group">
+          <label for="providerName">Provider Name</label>
+          <input type="text" id="providerName" placeholder="e.g., VTpass" required />
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="category">Category</label>
+            <select id="category" required>
+              <option value="">Select Category</option>
+              <option value="airtime">Airtime</option>
+              <option value="data">Data</option>
+              <option value="electricity">Electricity</option>
+              <option value="tv">TV</option>
+              <option value="epin">E-pin</option>
+              <option value="betting">Betting</option>
+              <option value="others">Others</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="mode">Mode</label>
+            <select id="mode">
+              <option value="sandbox">Sandbox (Testing)</option>
+              <option value="live">Live (Production)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="baseUrl">Base URL</label>
+          <input type="text" id="baseUrl" placeholder="e.g., https://sandbox.vtpass.com/api" required />
+        </div>
+
+        <div class="form-group">
+          <h4>Credentials</h4>
+          <div id="credentialsContainer">
+            <div class="credential-pair">
+              <input type="text" placeholder="API Key" class="label" value="API Key" />
+              <input type="text" placeholder="Your API key from VTpass" class="value" />
+            </div>
+            <div class="credential-pair">
+              <input type="text" placeholder="Public Key" class="label" value="Public Key" />
+              <input type="text" placeholder="Your Public Key (PK_...)" class="value" />
+            </div>
+            <div class="credential-pair">
+              <input type="text" placeholder="Secret Key" class="label" value="Secret Key" />
+              <input type="text" placeholder="Your Secret Key (SK_...)" class="value" />
+            </div>
+          </div>
+          <button type="button" id="addCredentialField" style="margin-top: 10px;">+ Add More Fields</button>
+        </div>
+
+        <button type="submit">💾 Save Integration</button>
+      </form>
+
+      <div style="margin: 20px 0; display: flex; gap: 12px; flex-wrap: wrap;">
+        <button id="setupLiveCredentialsBtn" style="background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);">🚀
+          Setup Live Credentials (One-Click)</button>
+        <button id="testVTpassBtn" style="background: #10b981;">🔌 Test VTpass Connection</button>
+      </div>
+      <div id="setupResult" style="margin-top: 10px;"></div>
+      <div id="testResult" style="margin-top: 10px;"></div>
+
+      <table id="integrationsTable">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Provider</th>
+            <th>Category</th>
+            <th>Mode</th>
+            <th>Base URL</th>
+            <th>Credentials</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <!-- Paystack Configuration Section -->
+    <section id="paystackSection" class="section" style="display: none;">
+      <h2>💳 Paystack Configuration</h2>
+
+      <div class="info-card">
+        <h3>📊 Paystack Status</h3>
+        <p><strong>Configuration Method:</strong> Environment Variables (.env file)</p>
+        <p><strong>Mode:</strong> <span id="paystackMode">Test Mode</span></p>
+        <p><strong>Status:</strong> <span id="paystackStatus" style="color: green;">✅ Active</span></p>
+      </div>
+
+      <div class="info-card">
+        <h3>🔑 API Keys (Masked for Security)</h3>
+        <table>
+          <tr>
+            <td><strong>Public Key:</strong></td>
+            <td><code>pk_test_***************************adfc3c</code></td>
+          </tr>
+          <tr>
+            <td><strong>Secret Key:</strong></td>
+            <td><code>sk_test_***************************9347c</code></td>
+          </tr>
+        </table>
+      </div>
+
+      <div class="info-card">
+        <h3>📡 Available Endpoints</h3>
+        <ul>
+          <li><strong>Initialize Payment:</strong> <code>POST /api/wallet/paystack/initialize</code></li>
+          <li><strong>Verify Payment:</strong> <code>GET /api/wallet/paystack/verify</code></li>
+          <li><strong>Webhook Handler:</strong> <code>POST /api/wallet/paystack/webhook</code></li>
+        </ul>
+      </div>
+
+      <div class="info-card">
+        <h3>ℹ️ Configuration Instructions</h3>
+        <p>To update Paystack keys, modify the following environment variables:</p>
+        <pre style="background: #f5f5f5; padding: 15px; border-radius: 5px; overflow-x: auto;">
+# In your .env file or Railway environment variables:
+PAYSTACK_PUBLIC_KEY=pk_test_your_public_key_here
+PAYSTACK_SECRET_KEY=sk_test_your_secret_key_here</pre>
+        <p><strong>Note:</strong> After updating environment variables, restart the application for changes to take
+          effect.</p>
+      </div>
+
+      <div class="info-card">
+        <h3>🧪 Test Payment</h3>
+        <p>Use these Paystack test cards for testing:</p>
+        <table>
+          <tr>
+            <td><strong>Card Number:</strong></td>
+            <td><code>5060 6666 6666 6666 6666</code></td>
+          </tr>
+          <tr>
+            <td><strong>Expiry:</strong></td>
+            <td>Any future date</td>
+          </tr>
+          <tr>
+            <td><strong>CVV:</strong></td>
+            <td>Any 3 digits</td>
+          </tr>
+          <tr>
+            <td><strong>PIN:</strong></td>
+            <td>1234</td>
+          </tr>
+          <tr>
+            <td><strong>OTP:</strong></td>
+            <td>123456</td>
+          </tr>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <script src="/dashboard.js"></script>
+</body>
+
+</html>

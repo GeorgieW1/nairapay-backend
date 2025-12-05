@@ -1,0 +1,39 @@
+🔍 DIAGNOSING VTPASS CREDENTIALS
+=================================
+
+Testing LIVE: GET /balance (using Public Key)...
+URL: https://vtpass.com/api/balance
+Headers: {
+  "api-key": "b8bed9a093539a61f851a69ac53cb45e",
+  "public-key": "PK_394bdd37d05020ef6b1c8b82be5af1e70b5768b5548"
+}
+Status: 401
+Response: {
+  "code": "087",
+  "message": "INVALID CREDENTIALS"
+}
+
+Testing LIVE: POST /pay (using Secret Key)...
+URL: https://vtpass.com/api/pay
+Headers: {
+  "api-key": "b8bed9a093539a61f851a69ac53cb45e",
+  "secret-key": "SK_98879d3e8ffab5f682a973c61bb2b8eb064f7513221",
+  "Content-Type": "application/json"
+}
+Status: 401
+Response: {
+  "code": "087",
+  "message": "INVALID CREDENTIALS"
+}
+
+Testing SANDBOX: GET /balance (using Public Key)...
+URL: https://sandbox.vtpass.com/api/balance
+Headers: {
+  "api-key": "b8bed9a093539a61f851a69ac53cb45e",
+  "public-key": "PK_394bdd37d05020ef6b1c8b82be5af1e70b5768b5548"
+}
+Status: 401
+Response: {
+  "code": "087",
+  "message": "INVALID CREDENTIALS"
+}

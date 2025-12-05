@@ -1,0 +1,10 @@
+PassengerAppRoot "/home/username/public_html/api"
+PassengerBaseURI "/"
+PassengerNodejs "/home/username/nodevenv/api/18/bin/node"
+PassengerEnabled on
+Options -Indexes
+
+<Files .env>
+    Order allow,deny
+    Deny from all
+</Files>
