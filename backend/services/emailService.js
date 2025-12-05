@@ -10,27 +10,27 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 // Fallback to Nodemailer if RESEND_API_KEY not set (for local development)
 let nodemailerTransporter = null;
 if (!process.env.RESEND_API_KEY && process.env.SMTP_USER) {
-    const nodemailer = await import('nodemailer');
-    nodemailerTransporter = nodemailer.default.createTransport({
-        host: process.env.SMTP_HOST || 'smtp.gmail.com',
-        port: parseInt(process.env.SMTP_PORT) || 587,
-        secure: process.env.SMTP_SECURE === 'true',
-        auth: {
-            user: process.env.SMTP_USER,
-            pass: process.env.SMTP_PASSWORD
-        },
-        tls: {
-            rejectUnauthorized: false
-        }
-    });
+  const nodemailer = await import('nodemailer');
+  nodemailerTransporter = nodemailer.default.createTransport({
+    host: process.env.SMTP_HOST || 'smtp.gmail.com',
+    port: parseInt(process.env.SMTP_PORT) || 587,
+    secure: process.env.SMTP_SECURE === 'true',
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASSWORD
+    },
+    tls: {
+      rejectUnauthorized: false
+    }
+  });
 }
 
 /**
  * Send OTP email for email verification
  */
 export const sendOTPEmail = async (email, otp, fullName = 'User') => {
-    try {
-        const htmlContent = `
+  try {
+    const htmlContent = `
       <!DOCTYPE html>
       <html>
       <head>
@@ -71,52 +71,52 @@ export const sendOTPEmail = async (email, otp, fullName = 'User') => {
       </html>
     `;
 
-        // Use Resend if API key is available (production), otherwise use Nodemailer (local)
-        if (process.env.RESEND_API_KEY) {
-            const { data, error } = await resend.emails.send({
-                from: 'NairaPay <onboarding@resend.dev>',
-                to: email,
-                subject: '✉️ Email Verification Code - NairaPay',
-                html: htmlContent
-            });
+    // Use Resend if API key is available (production), otherwise use Nodemailer (local)
+    if (process.env.RESEND_API_KEY) {
+      const { data, error } = await resend.emails.send({
+        from: 'NairaPay <nairapay.notifications@gmail.com>',
+        to: email,
+        subject: '✉️ Email Verification Code - NairaPay',
+        html: htmlContent
+      });
 
-            if (error) {
-                console.error('❌ Failed to send OTP email via Resend:', error);
-                return { success: false, error: error.message };
-            }
-
-            console.log('✅ OTP email sent via Resend to:', email);
-            return { success: true };
-        } else if (nodemailerTransporter) {
-            // Fallback to Nodemailer for local development
-            await nodemailerTransporter.sendMail({
-                from: `"NairaPay" <${process.env.SMTP_USER}>`,
-                to: email,
-                subject: '✉️ Email Verification Code - NairaPay',
-                html: htmlContent
-            });
-
-            console.log('✅ OTP email sent via Nodemailer to:', email);
-            return { success: true };
-        } else {
-            throw new Error('No email service configured. Set RESEND_API_KEY or SMTP credentials.');
-        }
-    } catch (error) {
-        console.error('❌ Failed to send OTP email:', error);
+      if (error) {
+        console.error('❌ Failed to send OTP email via Resend:', error);
         return { success: false, error: error.message };
+      }
+
+      console.log('✅ OTP email sent via Resend to:', email);
+      return { success: true };
+    } else if (nodemailerTransporter) {
+      // Fallback to Nodemailer for local development
+      await nodemailerTransporter.sendMail({
+        from: `"NairaPay" <${process.env.SMTP_USER}>`,
+        to: email,
+        subject: '✉️ Email Verification Code - NairaPay',
+        html: htmlContent
+      });
+
+      console.log('✅ OTP email sent via Nodemailer to:', email);
+      return { success: true };
+    } else {
+      throw new Error('No email service configured. Set RESEND_API_KEY or SMTP credentials.');
     }
+  } catch (error) {
+    console.error('❌ Failed to send OTP email:', error);
+    return { success: false, error: error.message };
+  }
 };
 
 /**
  * Send transaction receipt email
  */
 export const sendTransactionReceipt = async (email, transaction, user) => {
-    try {
-        const mailOptions = {
-            from: `"NairaPay" <${process.env.SMTP_USER}>`,
-            to: email,
-            subject: `✅ Transaction Receipt - ${transaction.type.toUpperCase()}`,
-            html: `
+  try {
+    const mailOptions = {
+      from: `"NairaPay" <${process.env.SMTP_USER}>`,
+      to: email,
+      subject: `✅ Transaction Receipt - ${transaction.type.toUpperCase()}`,
+      html: `
         <!DOCTYPE html>
         <html>
         <head>
@@ -181,38 +181,38 @@ export const sendTransactionReceipt = async (email, transaction, user) => {
         </body>
         </html>
       `
-        };
+    };
 
-        if (nodemailerTransporter) {
-            await nodemailerTransporter.sendMail(mailOptions);
-            console.log('✅ Receipt email sent to:', email);
-            return { success: true };
-        } else {
-            console.warn('⚠️ No email transporter available');
-            return { success: false, error: 'Email service not configured' };
-        }
-    } catch (error) {
-        console.error('❌ Failed to send receipt email:', error);
-        return { success: false, error: error.message };
+    if (nodemailerTransporter) {
+      await nodemailerTransporter.sendMail(mailOptions);
+      console.log('✅ Receipt email sent to:', email);
+      return { success: true };
+    } else {
+      console.warn('⚠️ No email transporter available');
+      return { success: false, error: 'Email service not configured' };
     }
+  } catch (error) {
+    console.error('❌ Failed to send receipt email:', error);
+    return { success: false, error: error.message };
+  }
 };
 
 /**
  * Send admin alert email for new transactions
  */
 export const sendAdminAlert = async (transaction, user) => {
-    try {
-        const adminEmail = process.env.ADMIN_EMAIL;
-        if (!adminEmail) {
-            console.warn('⚠️ ADMIN_EMAIL not configured, skipping admin alert');
-            return { success: false, error: 'Admin email not configured' };
-        }
+  try {
+    const adminEmail = process.env.ADMIN_EMAIL;
+    if (!adminEmail) {
+      console.warn('⚠️ ADMIN_EMAIL not configured, skipping admin alert');
+      return { success: false, error: 'Admin email not configured' };
+    }
 
-        const mailOptions = {
-            from: `"NairaPay Alerts" <${process.env.SMTP_USER}>`,
-            to: adminEmail,
-            subject: `🔔 New Transaction Alert - ${transaction.type.toUpperCase()}`,
-            html: `
+    const mailOptions = {
+      from: `"NairaPay Alerts" <${process.env.SMTP_USER}>`,
+      to: adminEmail,
+      subject: `🔔 New Transaction Alert - ${transaction.type.toUpperCase()}`,
+      html: `
         <!DOCTYPE html>
         <html>
         <head>
@@ -245,47 +245,47 @@ export const sendAdminAlert = async (transaction, user) => {
         </body>
         </html>
       `
-        };
+    };
 
-        if (nodemailerTransporter) {
-            await nodemailerTransporter.sendMail(mailOptions);
-            console.log('✅ Admin alert sent');
-            return { success: true };
-        } else {
-            console.warn('⚠️ No email transporter available');
-            return { success: false, error: 'Email service not configured' };
-        }
-    } catch (error) {
-        console.error('❌ Failed to send admin alert:', error);
-        return { success: false, error: error.message };
+    if (nodemailerTransporter) {
+      await nodemailerTransporter.sendMail(mailOptions);
+      console.log('✅ Admin alert sent');
+      return { success: true };
+    } else {
+      console.warn('⚠️ No email transporter available');
+      return { success: false, error: 'Email service not configured' };
     }
+  } catch (error) {
+    console.error('❌ Failed to send admin alert:', error);
+    return { success: false, error: error.message };
+  }
 };
 
 /**
  * Send E-pin purchase email
  */
 export const sendEpinEmail = async (email, pins, category, fullName = 'User') => {
-    try {
-        const pinListHtml = pins.map((pin, index) => `
+  try {
+    const pinListHtml = pins.map((pin, index) => `
             <div style="background: #f0f4f8; padding: 15px; margin: 10px 0; border-radius: 8px; border-left: 4px solid #667eea;">
                 <p style="margin: 0; font-size: 12px; color: #666;">PIN ${index + 1}</p>
                 <p style="margin: 5px 0 0 0; font-size: 24px; font-weight: bold; letter-spacing: 2px; color: #333;">${pin}</p>
             </div>
         `).join('');
 
-        const instructions = {
-            'WAEC': 'Visit <a href="https://www.waecdirect.org" target="_blank">www.waecdirect.org</a> to check your results.',
-            'NECO': 'Visit <a href="https://result.neco.gov.ng" target="_blank">result.neco.gov.ng</a> to check your results.',
-            'JAMB': 'Visit <a href="https://portal.jamb.gov.ng/efacility" target="_blank">portal.jamb.gov.ng</a> to check your results.'
-        };
+    const instructions = {
+      'WAEC': 'Visit <a href="https://www.waecdirect.org" target="_blank">www.waecdirect.org</a> to check your results.',
+      'NECO': 'Visit <a href="https://result.neco.gov.ng" target="_blank">result.neco.gov.ng</a> to check your results.',
+      'JAMB': 'Visit <a href="https://portal.jamb.gov.ng/efacility" target="_blank">portal.jamb.gov.ng</a> to check your results.'
+    };
 
-        const instructionText = instructions[category.toUpperCase()] || 'Visit the official exam body website to use your PIN.';
+    const instructionText = instructions[category.toUpperCase()] || 'Visit the official exam body website to use your PIN.';
 
-        const mailOptions = {
-            from: `"NairaPay" <${process.env.SMTP_USER}>`,
-            to: email,
-            subject: `🎓 Your ${category.toUpperCase()} E-pin Purchase - NairaPay`,
-            html: `
+    const mailOptions = {
+      from: `"NairaPay" <${process.env.SMTP_USER}>`,
+      to: email,
+      subject: `🎓 Your ${category.toUpperCase()} E-pin Purchase - NairaPay`,
+      html: `
         <!DOCTYPE html>
         <html>
         <head>
@@ -325,18 +325,18 @@ export const sendEpinEmail = async (email, pins, category, fullName = 'User') =>
         </body>
         </html>
       `
-        };
+    };
 
-        if (nodemailerTransporter) {
-            await nodemailerTransporter.sendMail(mailOptions);
-            console.log('✅ E-pin email sent to:', email);
-            return { success: true };
-        } else {
-            console.warn('⚠️ No email transporter available');
-            return { success: false, error: 'Email service not configured' };
-        }
-    } catch (error) {
-        console.error('❌ Failed to send E-pin email:', error);
-        return { success: false, error: error.message };
+    if (nodemailerTransporter) {
+      await nodemailerTransporter.sendMail(mailOptions);
+      console.log('✅ E-pin email sent to:', email);
+      return { success: true };
+    } else {
+      console.warn('⚠️ No email transporter available');
+      return { success: false, error: 'Email service not configured' };
     }
+  } catch (error) {
+    console.error('❌ Failed to send E-pin email:', error);
+    return { success: false, error: error.message };
+  }
 };
