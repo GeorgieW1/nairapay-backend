@@ -1,11 +1,13 @@
-import express from "express";
 import dotenv from "dotenv";
+dotenv.config(); // Load env vars immediately
+
+import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import pinoHttp from "pino-http";
 import logger from "./utils/logger.js";
-import admin from "firebase-admin";
+import { admin as firebaseAdmin, firebaseInitialized } from "./config/firebase.js"; // ✅ Centralized Config
 import connectDB from "./config/db.js";
 import fs from "fs";
 import path from "path";
@@ -19,8 +21,6 @@ import transactionRoutes from "./routes/transactionRoutes.js";
 import serviceRoutes from "./routes/serviceRoutes.js";
 import dataRoutes from "./routes/dataRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
-
-dotenv.config();
 
 const app = express();
 
@@ -73,39 +73,12 @@ app.use("/api/admin", sensitiveLimiter);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// ✅ Initialize Firebase Admin SDK (Optional)
-let firebaseInitialized = false;
-try {
-  const serviceAccountPath = "./config/firebaseServiceAccountKey.json";
+// ✅ Initialize Firebase Admin SDK (Moved to config/firebase.js)
+// Imported at the top
 
-  if (fs.existsSync(serviceAccountPath)) {
-    const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, "utf8"));
-    admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount),
-    });
-    firebaseInitialized = true;
-    console.log("🔥 Firebase Admin initialized from local service account");
-  } else if (process.env.FIREBASE_PRIVATE_KEY && process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_CLIENT_EMAIL) {
-    admin.initializeApp({
-      credential: admin.credential.cert({
-        projectId: process.env.FIREBASE_PROJECT_ID,
-        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-        privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, "\n"),
-      }),
-    });
-    firebaseInitialized = true;
-    console.log("🔥 Firebase Admin initialized from environment variables");
-  } else {
-    console.log("⚠️  Firebase not configured - Firebase login will be disabled");
-    console.log("   To enable Firebase, set FIREBASE_PRIVATE_KEY, FIREBASE_PROJECT_ID, and FIREBASE_CLIENT_EMAIL");
-  }
-} catch (error) {
-  console.error("❌ Firebase Admin initialization failed:", error.message);
-  console.log("⚠️  Continuing without Firebase - Firebase login will be disabled");
-}
 
 // ✅ Make Firebase globally accessible
-app.set("firebaseAdmin", admin);
+app.set("firebaseAdmin", firebaseAdmin);
 app.set("firebaseInitialized", firebaseInitialized);
 
 // ✅ MongoDB connect and server start

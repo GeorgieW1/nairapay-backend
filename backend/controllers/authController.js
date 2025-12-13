@@ -1,7 +1,7 @@
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import User from "../models/User.js";
-import admin from "firebase-admin"; // now available from your server.js initialization
+import { admin } from "../config/firebase.js"; // now available from your server.js initialization
 import { sendOTPEmail } from "../services/emailService.js";
 
 const getJwtSecret = () => {

@@ -1,47 +1,8 @@
-import admin from 'firebase-admin';
+import { admin, firebaseInitialized } from '../config/firebase.js';
 import User from '../models/User.js';
 
-// Check if Firebase is already initialized
-let firebaseInitialized = false;
+// Initialization is now handled in config/firebase.js
 
-const initializeFirebase = () => {
-  if (firebaseInitialized) return true;
-  
-  try {
-    // Check if Firebase is already initialized by server.js
-    if (admin.apps.length > 0) {
-      console.log('✅ Firebase already initialized - using existing instance');
-      firebaseInitialized = true;
-      return true;
-    }
-
-    // Only initialize if not already done
-    if (!process.env.FIREBASE_PROJECT_ID || 
-        !process.env.FIREBASE_PRIVATE_KEY || 
-        !process.env.FIREBASE_CLIENT_EMAIL) {
-      console.log('⚠️  Firebase not configured - Push notifications disabled');
-      return false;
-    }
-
-    admin.initializeApp({
-      credential: admin.credential.cert({
-        projectId: process.env.FIREBASE_PROJECT_ID,
-        privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
-        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      }),
-    });
-    
-    firebaseInitialized = true;
-    console.log('✅ Firebase Admin SDK initialized for push notifications');
-    return true;
-  } catch (error) {
-    console.error('❌ Firebase initialization error:', error.message);
-    return false;
-  }
-};
-
-// Initialize on module load
-initializeFirebase();
 
 /**
  * Save FCM token for a user
@@ -88,7 +49,7 @@ export const sendPushNotification = async (userId, title, body, data = {}) => {
 
   try {
     const user = await User.findById(userId);
-    
+
     if (!user || !user.fcmToken) {
       console.log(`⚠️  No FCM token for user ${userId}`);
       return false;
@@ -126,10 +87,10 @@ export const sendPushNotification = async (userId, title, body, data = {}) => {
     return true;
   } catch (error) {
     console.error('❌ Error sending push notification:', error.message);
-    
+
     // If token is invalid, remove it
     if (error.code === 'messaging/invalid-registration-token' ||
-        error.code === 'messaging/registration-token-not-registered') {
+      error.code === 'messaging/registration-token-not-registered') {
       await removeFCMToken(userId);
     }
     return false;
@@ -152,7 +113,7 @@ export const sendTransactionNotification = async (userId, type, amount, status) 
 
   const statusEmoji = status === 'completed' ? '✅' : '❌';
   const statusText = status === 'completed' ? 'Successful' : 'Failed';
-  
+
   const title = titles[type] || '💳 Transaction';
   const body = `${statusEmoji} ₦${amount.toLocaleString()} ${type} ${statusText}`;
 
@@ -205,7 +166,7 @@ export const sendBroadcastNotification = async (title, body, data = {}) => {
 
   try {
     const users = await User.find({ fcmToken: { $exists: true, $ne: null } });
-    
+
     let success = 0;
     let failed = 0;
 
