@@ -611,22 +611,102 @@
       gap: 20px;
     }
 
+    /* Mobile Menu Button */
+    #mobileMenuBtn {
+      display: none;
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      z-index: 100;
+      padding: 10px;
+      background: #3b82f6;
+      border: none;
+      border-radius: 8px;
+      color: white;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+    }
+
+    /* Responsive Tables */
+    .table-container {
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      margin-top: 32px;
+      border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(59, 130, 246, 0.1);
+      background: #111827;
+    }
+
+    .table-container table {
+      margin-top: 0;
+      border: none;
+      box-shadow: none;
+      min-width: 800px;
+      /* Ensure table doesn't squash on small screens */
+    }
+
     @media (max-width: 768px) {
       .form-row {
         grid-template-columns: 1fr;
       }
 
+      #mobileMenuBtn {
+        display: block;
+      }
+
       .sidebar {
-        width: 220px;
-        padding: 24px 16px;
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        width: 280px;
+        transform: translateX(-100%);
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        background: rgba(17, 24, 39, 0.95);
+        backdrop-filter: blur(10px);
+      }
+
+      .sidebar.show {
+        transform: translateX(0);
+      }
+
+      /* Overlay when sidebar is open */
+      .sidebar-overlay {
+        display: none;
+        /* Controlled by JS or can be added dynamically */
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 5;
+        backdrop-filter: blur(2px);
+      }
+
+      .sidebar-overlay.show {
+        display: block;
       }
 
       .main {
-        padding: 32px 24px;
+        padding: 80px 20px 32px 20px;
+        /* Top padding for menu button */
+        width: 100%;
       }
 
       h1 {
-        font-size: 2rem;
+        font-size: 1.75rem;
+      }
+
+      h2 {
+        font-size: 1.5rem;
+      }
+
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+
+      form {
+        padding: 24px;
       }
     }
 
@@ -651,6 +731,9 @@
 </head>
 
 <body>
+  <button id="mobileMenuBtn">☰ Menu</button>
+  <div id="sidebarOverlay" class="sidebar-overlay"></div>
+
   <!-- ===== Sidebar ===== -->
   <div class="sidebar">
     <div>
@@ -702,21 +785,23 @@
 
         <div class="analytics-section">
           <h2>Top Users</h2>
-          <table id="topUsersTable">
-            <thead>
-              <tr>
-                <th>User</th>
-                <th>Email</th>
-                <th>Total Spent</th>
-                <th>Transactions</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td colspan="4">Loading...</td>
-              </tr>
-            </tbody>
-          </table>
+          <div class="table-container">
+            <table id="topUsersTable">
+              <thead>
+                <tr>
+                  <th>User</th>
+                  <th>Email</th>
+                  <th>Total Spent</th>
+                  <th>Transactions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td colspan="4">Loading...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </section>
@@ -749,23 +834,25 @@
         <button id="clearFilters">Clear</button>
       </div>
 
-      <table id="transactionsTable">
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>User</th>
-            <th>Type</th>
-            <th>Amount</th>
-            <th>Status</th>
-            <th>Description</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td colspan="6">Loading...</td>
-          </tr>
-        </tbody>
-      </table>
+      <div class="table-container">
+        <table id="transactionsTable">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>User</th>
+              <th>Type</th>
+              <th>Amount</th>
+              <th>Status</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td colspan="6">Loading...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
       <div id="transactionsPagination"></div>
     </section>

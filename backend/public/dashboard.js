@@ -38,6 +38,35 @@ document.addEventListener("DOMContentLoaded", async () => {
     paystackSection.classList.add("hidden");
   };
 
+  // ===== MOBILE MENU LOGIC =====
+  const sidebar = document.querySelector('.sidebar');
+  const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+  const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+  const toggleSidebar = () => {
+    sidebar.classList.toggle('show');
+    sidebarOverlay.classList.toggle('show');
+    mobileMenuBtn.textContent = sidebar.classList.contains('show') ? '✕ Close' : '☰ Menu';
+  };
+
+  const closeSidebar = () => {
+    sidebar.classList.remove('show');
+    sidebarOverlay.classList.remove('show');
+    mobileMenuBtn.textContent = '☰ Menu';
+  };
+
+  mobileMenuBtn.addEventListener('click', toggleSidebar);
+  sidebarOverlay.addEventListener('click', closeSidebar);
+
+  // Close sidebar when a link is clicked (mobile)
+  document.querySelectorAll('.sidebar a').forEach(link => {
+    link.addEventListener('click', () => {
+      if (window.innerWidth <= 768) {
+        closeSidebar();
+      }
+    });
+  });
+
   // ===== DASHBOARD SECTION =====
   document.getElementById("dashboardBtn").onclick = async () => {
     hideAllSections();
