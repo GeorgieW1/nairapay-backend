@@ -1,9 +1,12 @@
 import express from "express";
 import User from "../models/User.js";
-import ApiKey from "../models/ApiKey.js"; // ✅ Make sure this file exists (models/ApiKey.js)
+import ApiKey from "../models/ApiKey.js";
 import jwt from "jsonwebtoken";
 import Integration from "../models/Integration.js";
 import Transaction from "../models/Transaction.js";
+import Banner from "../models/Banner.js";
+import bcrypt from "bcryptjs"; // Using bcryptjs as it's common in node apps, check package.json if unsure but usually synonymous or compatible
+
 
 
 const router = express.Router();
@@ -106,6 +109,71 @@ router.post("/users/:id/fund", verifyAdmin, async (req, res) => {
   } catch (error) {
     if (req.log) req.log.error({ err: error }, "Error funding wallet");
     res.status(500).json({ success: false, message: "Failed to fund wallet" });
+  }
+});
+
+// ✅ Create a new user manually
+
+
+router.post("/users", verifyAdmin, async (req, res) => {
+  try {
+    const { name, email, password, phone, role } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ success: false, message: "Email and Password are required" });
+    }
+
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ success: false, message: "User already exists" });
+    }
+
+    // Hash password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    const newUser = new User({
+      name,
+      email,
+      password: hashedPassword,
+      phone,
+      role: role || "user",
+      emailVerified: true // Admins create verified users by default
+    });
+
+    await newUser.save();
+
+    res.json({ success: true, message: "User created successfully", user: { id: newUser._id, email: newUser.email, role: newUser.role } });
+  } catch (error) {
+    if (req.log) req.log.error({ err: error }, "Error creating user");
+    res.status(500).json({ success: false, message: "Failed to create user" });
+  }
+});
+
+// ✅ Change user role
+router.patch("/users/:id/role", verifyAdmin, async (req, res) => {
+  try {
+    const { role } = req.body;
+    const userId = req.params.id;
+
+    if (!["user", "admin"].includes(role)) {
+      return res.status(400).json({ success: false, message: "Invalid role" });
+    }
+
+    // Prevent modifying self (unless we want to allow admins to demote themselves? unsafe)
+    if (userId === req.user.id) {
+      return res.status(400).json({ success: false, message: "Cannot change your own role" });
+    }
+
+    const user = await User.findByIdAndUpdate(userId, { role }, { new: true });
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    res.json({ success: true, message: `User role updated to ${role}`, user: { id: user._id, role: user.role } });
+  } catch (error) {
+    if (req.log) req.log.error({ err: error }, "Error updating role");
+    res.status(500).json({ success: false, message: "Failed to update role" });
   }
 });
 
@@ -444,6 +512,42 @@ router.get("/analytics", verifyAdmin, async (req, res) => {
       { $project: { name: "$user.name", email: "$user.email", totalSpent: 1, transactionCount: 1 } }
     ]);
 
+    // 7-Day Chart Data (Daily Volume & Revenue)
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    const chartData = await Transaction.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: sevenDaysAgo },
+          status: "completed",
+          type: { $ne: "credit" } // Exclude wallet funding from revenue charts
+        }
+      },
+      {
+        $group: {
+          _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+          revenue: { $sum: "$amount" },
+          count: { $sum: 1 }
+        }
+      },
+      { $sort: { _id: 1 } }
+    ]);
+
+    // Fill in missing days for the chart
+    const fullChartData = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const dateStr = d.toISOString().split('T')[0];
+      const found = chartData.find(c => c._id === dateStr);
+      fullChartData.push({
+        date: dateStr,
+        revenue: found ? found.revenue : 0,
+        count: found ? found.count : 0
+      });
+    }
+
     res.json({
       success: true,
       analytics: {
@@ -451,7 +555,7 @@ router.get("/analytics", verifyAdmin, async (req, res) => {
           transactions: todayTransactions,
           revenue: todayRevenue[0]?.total || 0,
           activeUsers,
-          successRate: todayTransactions > 0 ? ((successCount / (successCount + failedCount + pendingCount)) * 100).toFixed(1) : 0
+          successRate: (successCount + failedCount + pendingCount) > 0 ? ((successCount / (successCount + failedCount + pendingCount)) * 100).toFixed(1) : 0
         },
         month: {
           transactions: monthTransactions,
@@ -469,12 +573,56 @@ router.get("/analytics", verifyAdmin, async (req, res) => {
           count: s.count,
           percentage: monthRevenue[0]?.total ? ((s.total / monthRevenue[0].total) * 100).toFixed(1) : 0
         })),
-        topUsers
+        topUsers,
+        charts: fullChartData
       }
     });
   } catch (error) {
     if (req.log) req.log.error({ err: error }, "Error fetching analytics");
     res.status(500).json({ success: false, message: "Failed to fetch analytics" });
+  }
+});
+
+// 4️⃣ Get Banner Settings
+router.get("/banner", verifyAdmin, async (req, res) => {
+  try {
+    // Return the most recently updated banner or the active one
+    const banner = await Banner.findOne().sort({ updatedAt: -1 }); // Singleton-ish behavior
+    res.json({ success: true, banner });
+  } catch (error) {
+    if (req.log) req.log.error({ err: error }, "Error fetching banner");
+    res.status(500).json({ success: false, message: "Failed to fetch banner" });
+  }
+});
+
+// 5️⃣ Update/Set Banner
+router.post("/banner", verifyAdmin, async (req, res) => {
+  try {
+    const { imageUrl, actionUrl, isActive } = req.body;
+
+    // Use a singleton approach: upsert the first document or always create new?
+    // Let's keep it simple: Find one and update, or create if none.
+    let banner = await Banner.findOne();
+
+    if (banner) {
+      banner.imageUrl = imageUrl || banner.imageUrl;
+      banner.actionUrl = actionUrl === undefined ? banner.actionUrl : actionUrl;
+      banner.isActive = isActive === undefined ? banner.isActive : isActive;
+      banner.updatedBy = req.user.name;
+    } else {
+      banner = new Banner({
+        imageUrl,
+        actionUrl,
+        isActive: isActive !== undefined ? isActive : true,
+        createdBy: req.user.name
+      });
+    }
+
+    await banner.save();
+    res.json({ success: true, message: "Banner settings updated", banner });
+  } catch (error) {
+    if (req.log) req.log.error({ err: error }, "Error updating banner");
+    res.status(500).json({ success: false, message: "Failed to update banner" });
   }
 });
 
@@ -608,7 +756,48 @@ router.get("/transactions/:id", verifyAdmin, async (req, res) => {
   }
 });
 
-// 6️⃣ One-click setup live credentials
+// 6️⃣ Edit Transaction (Reference & Status ONLY)
+router.patch("/transactions/:id", verifyAdmin, async (req, res) => {
+  try {
+    const { reference, status, description } = req.body;
+    const transactionId = req.params.id;
+
+    const transaction = await Transaction.findById(transactionId);
+    if (!transaction) {
+      return res.status(404).json({ success: false, message: "Transaction not found" });
+    }
+
+    // Update allowed fields only
+    if (reference) transaction.reference = reference;
+    if (status) transaction.status = status;
+    if (description) transaction.description = description;
+
+    // Log the edit for audit purposes (optional but good practice)
+    transaction.metadata = {
+      ...transaction.metadata,
+      lastEditedBy: req.user.id,
+      lastEditedAt: new Date()
+    };
+
+    await transaction.save();
+
+    res.json({
+      success: true,
+      message: "Transaction updated successfully",
+      transaction: {
+        id: transaction._id,
+        reference: transaction.reference,
+        status: transaction.status,
+        description: transaction.description
+      }
+    });
+  } catch (error) {
+    if (req.log) req.log.error({ err: error }, "Error updating transaction");
+    res.status(500).json({ success: false, message: "Failed to update transaction" });
+  }
+});
+
+// 7️⃣ One-click setup live credentials
 router.post("/integrations/setup-live", verifyAdmin, async (req, res) => {
   try {
     const VTPASS_CREDENTIALS = {

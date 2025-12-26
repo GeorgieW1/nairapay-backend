@@ -22,8 +22,9 @@
       height: 100vh;
       background: #0a0e27;
       background-image:
-        radial-gradient(at 50% 0%, rgba(59, 130, 246, 0.15) 0px, transparent 50%),
-        radial-gradient(at 100% 0%, rgba(59, 130, 246, 0.1) 0px, transparent 50%);
+        radial-gradient(at 20% 50%, rgba(34, 197, 94, 0.08) 0px, transparent 50%),
+        radial-gradient(at 80% 80%, rgba(59, 130, 246, 0.08) 0px, transparent 50%),
+        radial-gradient(at 40% 20%, rgba(168, 85, 247, 0.06) 0px, transparent 50%);
       background-attachment: fixed;
       color: #e5e7eb;
     }
@@ -53,16 +54,17 @@
     }
 
     .sidebar h2 {
-      display: none;
-      /* Replaced by logo image */
-    }
-
-    .sidebar-logo {
-      width: 140px;
-      height: 50px;
-      margin-bottom: 40px;
-      background: url('/logo.png') no-repeat left center;
-      background-size: contain;
+      font-family: 'Space Grotesk', sans-serif;
+      text-align: left;
+      margin-bottom: 48px;
+      font-size: 1.75rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      background: linear-gradient(135deg, #3b82f6 0%, #22c55e 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      padding-left: 8px;
     }
 
     .sidebar ul {
@@ -176,7 +178,7 @@
       left: 0;
       width: 80px;
       height: 2px;
-      background: linear-gradient(90deg, #3b82f6, transparent);
+      background: linear-gradient(90deg, #3b82f6, #22c55e);
     }
 
     h2 {
@@ -324,7 +326,7 @@
     }
 
     form button[type="submit"] {
-      background: #3b82f6;
+      background: linear-gradient(135deg, #3b82f6 0%, #22c55e 100%);
       color: white;
       box-shadow: 0 4px 20px rgba(59, 130, 246, 0.4);
     }
@@ -432,7 +434,7 @@
     }
 
     #applyFilters {
-      background: #3b82f6;
+      background: linear-gradient(135deg, #3b82f6 0%, #22c55e 100%);
       color: white;
       box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
     }
@@ -725,114 +727,7 @@
     ::-webkit-scrollbar-thumb:hover {
       background: rgba(59, 130, 246, 0.5);
     }
-
-    /* Role Badges */
-    .role-badge {
-      padding: 4px 10px;
-      border-radius: 12px;
-      font-size: 0.8rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .role-admin {
-      background: rgba(59, 130, 246, 0.15);
-      color: #3b82f6;
-      border: 1px solid rgba(59, 130, 246, 0.3);
-    }
-
-    .role-user {
-      background: rgba(107, 114, 128, 0.15);
-      color: #9ca3af;
-      border: 1px solid rgba(107, 114, 128, 0.3);
-    }
-
-    /* Modal Styles */
-    .modal {
-      display: none;
-      position: fixed;
-      z-index: 1000;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.7);
-      backdrop-filter: blur(5px);
-    }
-
-    .modal-content {
-      background-color: #111827;
-      margin: 10% auto;
-      padding: 32px;
-      border: 1px solid rgba(59, 130, 246, 0.2);
-      width: 90%;
-      max-width: 500px;
-      border-radius: 16px;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-      position: relative;
-    }
-
-    .close-modal {
-      position: absolute;
-      right: 24px;
-      top: 24px;
-      color: #9ca3af;
-      font-size: 28px;
-      font-weight: bold;
-      cursor: pointer;
-      line-height: 1;
-    }
-
-    .close-modal:hover {
-      color: #fff;
-    }
-
-    .close-modal:hover {
-      color: #fff;
-    }
-
-    .modal h2 {
-      margin-top: 0;
-      font-size: 1.5rem;
-      border-bottom: 1px solid rgba(59, 130, 246, 0.2);
-      padding-bottom: 16px;
-      margin-bottom: 24px;
-    }
-
-    /* Chart Containers */
-    .chart-container {
-      position: relative;
-      height: 300px;
-      width: 100%;
-      background: rgba(17, 24, 39, 0.6);
-      border-radius: 12px;
-      padding: 15px;
-      border: 1px solid rgba(59, 130, 246, 0.1);
-      margin-bottom: 24px;
-    }
-
-    /* Banner Preview */
-    .banner-preview {
-      width: 100%;
-      height: 150px;
-      background-color: #1f2937;
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-      margin-bottom: 15px;
-      border: 1px dashed #4b5563;
-    }
-
-    .banner-preview img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
   </style>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
 <body>
@@ -842,13 +737,12 @@
   <!-- ===== Sidebar ===== -->
   <div class="sidebar">
     <div>
-      <div class="sidebar-logo"></div>
+      <h2>⚡ NairaPay</h2>
       <ul>
         <li><a href="#" id="dashboardBtn">📊 Dashboard</a></li>
         <li><a href="#" id="transactionsBtn">💳 Transactions</a></li>
         <li><a href="#" id="usersBtn">👥 Users</a></li>
         <li><a href="#" id="integrationsBtn">🔌 Integrations</a></li>
-        <li><a href="#" id="bannersBtn">🖼️ App Banners</a></li>
         <li><a href="#" id="paystackBtn">💰 Paystack Config</a></li>
       </ul>
     </div>
@@ -881,18 +775,6 @@
             <h3>Month Revenue</h3>
             <p class="stat-value" id="monthRevenue">₦0</p>
             <p class="stat-label" id="monthTransactions">0 transactions</p>
-          </div>
-        </div>
-
-        <div
-          style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 24px; margin-bottom: 30px;">
-          <div class="chart-container">
-            <h3>📈 Transaction Volume (Last 7 Days)</h3>
-            <canvas id="volumeChart"></canvas>
-          </div>
-          <div class="chart-container">
-            <h3>💰 Revenue Growth (Last 7 Days)</h3>
-            <canvas id="revenueChart"></canvas>
           </div>
         </div>
 
@@ -961,73 +843,23 @@
               <th>Type</th>
               <th>Amount</th>
               <th>Status</th>
-              <th>Status</th>
               <th>Description</th>
-              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td colspan="7">Loading...</td>
+              <td colspan="6">Loading...</td>
             </tr>
           </tbody>
         </table>
       </div>
 
       <div id="transactionsPagination"></div>
-
-      <!-- Edit Transaction Modal -->
-      <div id="editTransactionModal" class="modal">
-        <div class="modal-content">
-          <span class="close-modal">&times;</span>
-          <h2>Edit Transaction</h2>
-          <form id="editTransactionForm">
-            <input type="hidden" id="editTransId">
-
-            <div class="form-row">
-              <div class="form-group">
-                <label>Amount (Read-only)</label>
-                <input type="text" id="editTransAmount" readonly
-                  style="background: #1f2937; color: #9ca3af; cursor: not-allowed;">
-              </div>
-              <div class="form-group">
-                <label>Type (Read-only)</label>
-                <input type="text" id="editTransType" readonly
-                  style="background: #1f2937; color: #9ca3af; cursor: not-allowed;">
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label for="editTransRef">Reference ID</label>
-              <input type="text" id="editTransRef" placeholder="Transaction Reference">
-            </div>
-
-            <div class="form-group">
-              <label for="editTransStatus">Status</label>
-              <select id="editTransStatus">
-                <option value="completed">Completed</option>
-                <option value="pending">Pending</option>
-                <option value="failed">Failed</option>
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label for="editTransDesc">Description</label>
-              <textarea id="editTransDesc" rows="3"></textarea>
-            </div>
-
-            <button type="submit" style="width: 100%;">Update Transaction</button>
-          </form>
-        </div>
-      </div>
     </section>
 
     <!-- Users Section -->
     <section id="usersSection" class="hidden">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
-        <h2 style="margin-bottom: 0;">Registered Users</h2>
-        <button id="addUserBtn" style="background: #3b82f6; color: white;">+ Add New User</button>
-      </div>
+      <h2>Registered Users</h2>
       <form id="fundWalletForm">
         <div class="form-group">
           <label for="fundUserSelect">Select User</label>
@@ -1069,57 +901,20 @@
         <button type="submit" style="background: #ef4444;">⚠️ Deduct from Wallet</button>
       </form>
 
-      <div class="table-container">
-        <table id="usersTable">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Role</th>
-              <th>Email Status</th>
-              <th>Wallet Balance</th>
-              <th>Date Joined</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
-
-      <!-- Add User Modal -->
-      <div id="addUserModal" class="modal">
-        <div class="modal-content">
-          <span class="close-modal">&times;</span>
-          <h2>Add New User</h2>
-          <form id="addUserForm">
-            <div class="form-group">
-              <label for="newUserName">Full Name</label>
-              <input type="text" id="newUserName" required placeholder="John Doe">
-            </div>
-            <div class="form-group">
-              <label for="newUserEmail">Email Address</label>
-              <input type="email" id="newUserEmail" required placeholder="john@example.com">
-            </div>
-            <div class="form-group">
-              <label for="newUserPhone">Phone Number</label>
-              <input type="tel" id="newUserPhone" placeholder="08012345678">
-            </div>
-            <div class="form-group">
-              <label for="newUserRole">Role</label>
-              <select id="newUserRole">
-                <option value="user">User</option>
-                <option value="admin">Admin</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="newUserPassword">Password</label>
-              <input type="password" id="newUserPassword" required placeholder="Minimum 6 characters">
-            </div>
-            <button type="submit" style="width: 100%;">Create User</button>
-          </form>
-        </div>
-      </div>
+      <table id="usersTable">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Email Status</th>
+            <th>Wallet Balance</th>
+            <th>Date Joined</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
     </section>
 
     <!-- Integrations Section -->
@@ -1204,42 +999,6 @@
         </thead>
         <tbody></tbody>
       </table>
-    </section>
-
-    </section>
-
-    <!-- Banner Management Section -->
-    <section id="bannersSection" class="hidden">
-      <h2>🖼️ Mobile App Banners</h2>
-      <div class="info-card">
-        <h3>Current Banner</h3>
-        <p>This banner is displayed on the user's mobile app home screen.</p>
-
-        <div class="banner-preview" id="currentBannerPreview">
-          <span style="color: #9ca3af;">No active banner</span>
-        </div>
-
-        <form id="bannerForm">
-          <div class="form-group">
-            <label for="bannerImageUrl">Image URL</label>
-            <input type="url" id="bannerImageUrl" placeholder="https://example.com/image.jpg" required>
-            <small style="color: #9ca3af; display: block; margin-top: 4px;">Direct link to image (PNG/JPG)</small>
-          </div>
-
-          <div class="form-group">
-            <label for="bannerActionUrl">Action URL (Optional)</label>
-            <input type="text" id="bannerActionUrl" placeholder="https://nairapay.ng/promo or internal link">
-            <small style="color: #9ca3af; display: block; margin-top: 4px;">Link to open when banner is clicked</small>
-          </div>
-
-          <div class="form-group" style="display: flex; align-items: center; gap: 10px;">
-            <input type="checkbox" id="bannerIsActive" style="width: auto; height: 18px; width: 18px;">
-            <label for="bannerIsActive" style="margin-bottom: 0; cursor: pointer;">Enable Banner</label>
-          </div>
-
-          <button type="submit" style="background: #8b5cf6;">💾 Save Banner Settings</button>
-        </form>
-      </div>
     </section>
 
     <!-- Paystack Configuration Section -->

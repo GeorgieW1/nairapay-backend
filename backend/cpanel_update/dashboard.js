@@ -11,12 +11,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const transactionsSection = document.getElementById("transactionsSection");
   const usersSection = document.getElementById("usersSection");
   const integrationsSection = document.getElementById("integrationsSection");
-  const bannersSection = document.getElementById("bannersSection"); // New
   const paystackSection = document.getElementById("paystackSection");
-
-  // Chart instances
-  let volumeChart = null;
-  let revenueChart = null;
 
   const currencyFormatter = new Intl.NumberFormat("en-NG", {
     style: "currency",
@@ -40,7 +35,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     transactionsSection.classList.add("hidden");
     usersSection.classList.add("hidden");
     integrationsSection.classList.add("hidden");
-    bannersSection.classList.add("hidden"); // New
     paystackSection.classList.add("hidden");
   };
 
@@ -131,74 +125,10 @@ document.addEventListener("DOMContentLoaded", async () => {
       } else {
         tbody.innerHTML = '<tr><td colspan="4">No data available</td></tr>';
       }
-
-      // Render Charts
-      renderCharts(analytics.charts);
-
     } catch (error) {
       console.error("Error loading analytics:", error);
       alert("Failed to load analytics");
     }
-  }
-
-  function renderCharts(chartData) {
-    if (!chartData) return;
-
-    const labels = chartData.map(d => d.date);
-    const revenueData = chartData.map(d => d.revenue);
-    const volumeData = chartData.map(d => d.count);
-
-    const commonOptions = {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { labels: { color: '#e5e7eb' } }
-      },
-      scales: {
-        y: { ticks: { color: '#9ca3af' }, grid: { color: 'rgba(255, 255, 255, 0.1)' } },
-        x: { ticks: { color: '#9ca3af' }, grid: { color: 'rgba(255, 255, 255, 0.1)' } }
-      }
-    };
-
-    // Volume Chart
-    const ctxVolume = document.getElementById('volumeChart').getContext('2d');
-    if (volumeChart) volumeChart.destroy();
-
-    volumeChart = new Chart(ctxVolume, {
-      type: 'bar',
-      data: {
-        labels: labels,
-        datasets: [{
-          label: 'Transaction Count',
-          data: volumeData,
-          backgroundColor: 'rgba(59, 130, 246, 0.6)',
-          borderColor: '#3b82f6',
-          borderWidth: 1
-        }]
-      },
-      options: commonOptions
-    });
-
-    // Revenue Chart
-    const ctxRevenue = document.getElementById('revenueChart').getContext('2d');
-    if (revenueChart) revenueChart.destroy();
-
-    revenueChart = new Chart(ctxRevenue, {
-      type: 'line',
-      data: {
-        labels: labels,
-        datasets: [{
-          label: 'Revenue (NGN)',
-          data: revenueData,
-          backgroundColor: 'rgba(34, 197, 94, 0.2)',
-          borderColor: '#22c55e',
-          borderWidth: 2,
-          tension: 0.4,
-          fill: true
-        }]
-      },
-      options: commonOptions
-    });
   }
 
   function getServiceIcon(type) {
@@ -261,12 +191,6 @@ document.addEventListener("DOMContentLoaded", async () => {
             <td>${currencyFormatter.format(tx.amount)}</td>
             <td><span style="color: ${getStatusColor(tx.status)};">${tx.status}</span></td>
             <td>${tx.description}</td>
-            <td>
-              <button 
-                onclick="openEditTransactionModal('${tx._id}', '${tx.amount}', '${tx.type}', '${tx.reference || ''}', '${tx.status}', '${(tx.description || '').replace(/'/g, "\\'")}')"
-                style="background: rgba(59, 130, 246, 0.1); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.3); padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.8rem;"
-              >✎ Edit</button>
-            </td>
           </tr>
         `).join('');
       } else {
@@ -358,9 +282,6 @@ document.addEventListener("DOMContentLoaded", async () => {
           <td>${user.name}</td>
           <td>${user.email}</td>
           <td>
-            <span class="role-badge role-${user.role || 'user'}">${user.role || 'USER'}</span>
-          </td>
-          <td>
             ${user.isEmailVerified
           ? '<span style="background: rgba(34, 197, 94, 0.15); color: #22c55e; padding: 4px 12px; border-radius: 12px; font-size: 0.85rem; font-weight: 600;">✓ Verified</span>'
           : '<span style="background: rgba(251, 146, 60, 0.15); color: #fb923c; padding: 4px 12px; border-radius: 12px; font-size: 0.85rem; font-weight: 600;">⚠ Unverified</span>'
@@ -368,162 +289,21 @@ document.addEventListener("DOMContentLoaded", async () => {
           </td>
           <td>${currencyFormatter.format(user.walletBalance || 0)}</td>
           <td>${new Date(user.createdAt).toLocaleDateString()}</td>
-          </td>
-          <td>${currencyFormatter.format(user.walletBalance || 0)}</td>
-          <td>${new Date(user.createdAt).toLocaleDateString()}</td>
           <td>
-            <div class="action-buttons" style="display: flex; gap: 8px;">
-               ${user.role !== 'admin' ?
-          `<button class="promote-btn" onclick="changeUserRole('${user._id}', 'admin')" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6; padding: 6px 10px; font-size: 0.8rem;">⬆ Admin</button>`
-          : `<button class="demote-btn" onclick="changeUserRole('${user._id}', 'user')" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b; padding: 6px 10px; font-size: 0.8rem;">⬇ User</button>`
-        }
-              <button 
-                class="delete-user-btn"
-                data-user-id="${user._id}"
-                data-user-name="${user.name || user.email}"
-                style="background: rgba(239, 68, 68, 0.1); color: #ef4444; padding: 6px 10px; border: none; border-radius: 8px; cursor: pointer; font-size: 0.8rem; font-weight: 600;"
-              >🗑️</button>
-            </div>
+            <button 
+              class="delete-user-btn"
+              data-user-id="${user._id}"
+              data-user-name="${user.name || user.email}"
+              style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; padding: 8px 16px; border: none; border-radius: 8px; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.2s;"
+            >❌ Delete</button>
           </td>
         </tr>
       `).join('');
     } catch (error) {
       console.error("Error fetching users:", error);
-      tbody.innerHTML = "<tr><td colspan='8'>Failed to load users</td></tr>";
+      tbody.innerHTML = "<tr><td colspan='7'>Failed to load users</td></tr>";
     }
   }
-
-  // Change User Role
-  window.changeUserRole = async (userId, newRole) => {
-    if (!confirm(`Are you sure you want to change this user's role to ${newRole.toUpperCase()}?`)) return;
-
-    try {
-      const res = await fetch(`/api/admin/users/${userId}/role`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({ role: newRole })
-      });
-
-      const data = await res.json();
-      if (data.success) {
-        alert("✅ Role updated successfully");
-        await fetchAndRenderUsers();
-      } else {
-        alert(`❌ ${data.message}`);
-      }
-    } catch (error) {
-      console.error("Error changing role:", error);
-      alert("Failed to change role");
-    }
-  };
-
-  // --- Edit Transaction Modal Logic ---
-  const editTransModal = document.getElementById("editTransactionModal");
-  const closeTransModalBtn = editTransModal.querySelector(".close-modal");
-
-  window.openEditTransactionModal = (id, amount, type, ref, status, desc) => {
-    document.getElementById("editTransId").value = id;
-    document.getElementById("editTransAmount").value = currencyFormatter.format(amount);
-    document.getElementById("editTransType").value = type.toUpperCase();
-    document.getElementById("editTransRef").value = ref;
-    document.getElementById("editTransStatus").value = status;
-    document.getElementById("editTransDesc").value = desc === 'undefined' ? '' : desc;
-
-    editTransModal.style.display = "block";
-  };
-
-  closeTransModalBtn.onclick = () => {
-    editTransModal.style.display = "none";
-  };
-
-  document.getElementById("editTransactionForm").onsubmit = async (e) => {
-    e.preventDefault();
-    const id = document.getElementById("editTransId").value;
-    const reference = document.getElementById("editTransRef").value;
-    const status = document.getElementById("editTransStatus").value;
-    const description = document.getElementById("editTransDesc").value;
-
-    try {
-      const res = await fetch(`/api/admin/transactions/${id}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({ reference, status, description })
-      });
-
-      const data = await res.json();
-      if (data.success) {
-        alert("✅ Transaction updated successfully");
-        editTransModal.style.display = "none";
-        loadTransactions(currentTransactionsPage); // Refresh table
-      } else {
-        alert(`❌ ${data.message}`);
-      }
-    } catch (error) {
-      console.error("Error updating transaction:", error);
-      alert("Failed to update transaction");
-    }
-  };
-
-  // Add User Modal Logic
-  const addUserModal = document.getElementById("addUserModal");
-  const addUserBtn = document.getElementById("addUserBtn");
-  const closeModal = document.querySelector(".close-modal");
-
-  addUserBtn.onclick = () => {
-    addUserModal.style.display = "block";
-  };
-
-  closeModal.onclick = () => {
-    addUserModal.style.display = "none";
-  };
-
-  window.onclick = (event) => {
-    if (event.target == addUserModal) {
-      addUserModal.style.display = "none";
-    }
-  };
-
-  // Add User Form Submission
-  document.getElementById("addUserForm").onsubmit = async (e) => {
-    e.preventDefault();
-
-    const name = document.getElementById("newUserName").value;
-    const email = document.getElementById("newUserEmail").value;
-    const phone = document.getElementById("newUserPhone").value;
-    const role = document.getElementById("newUserRole").value;
-    const password = document.getElementById("newUserPassword").value;
-
-    try {
-      const res = await fetch("/api/admin/users", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({ name, email, phone, role, password })
-      });
-
-      const data = await res.json();
-
-      if (data.success) {
-        alert("✅ User created successfully!");
-        addUserModal.style.display = "none";
-        document.getElementById("addUserForm").reset();
-        await fetchAndRenderUsers();
-      } else {
-        alert(`❌ ${data.message}`);
-      }
-    } catch (error) {
-      console.error("Error creating user:", error);
-      alert("Failed to create user");
-    }
-  };
 
   // Event delegation for delete user buttons
   document.addEventListener('click', async (e) => {
@@ -848,76 +628,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     } catch (error) {
       console.error("Error adding integration:", error);
       alert("Failed to add integration");
-    }
-  };
-
-
-
-  // ===== BANNERS SECTION =====
-  const bannersBtn = document.getElementById("bannersBtn");
-  if (bannersBtn) {
-    bannersBtn.onclick = async () => {
-      hideAllSections();
-      if (bannersSection) bannersSection.classList.remove("hidden");
-      setActiveLink("bannersBtn");
-      await loadBannerSettings();
-    };
-  }
-
-  async function loadBannerSettings() {
-    try {
-      const res = await fetch("/api/admin/banner", {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = await res.json();
-
-      const preview = document.getElementById("currentBannerPreview");
-      const imgInput = document.getElementById("bannerImageUrl");
-      const actionInput = document.getElementById("bannerActionUrl");
-      const activeCheck = document.getElementById("bannerIsActive");
-
-      if (data.success && data.banner) {
-        imgInput.value = data.banner.imageUrl || '';
-        actionInput.value = data.banner.actionUrl || '';
-        activeCheck.checked = data.banner.isActive;
-
-        if (data.banner.isActive && data.banner.imageUrl) {
-          preview.innerHTML = `<img src="${data.banner.imageUrl}" alt="Banner Preview">`;
-        } else {
-          preview.innerHTML = '<span style="color: #9ca3af;">Banner Disabled or No Image</span>';
-        }
-      }
-    } catch (error) {
-      console.error("Error loading banner:", error);
-    }
-  }
-
-  document.getElementById("bannerForm").onsubmit = async (e) => {
-    e.preventDefault();
-    const imageUrl = document.getElementById("bannerImageUrl").value;
-    const actionUrl = document.getElementById("bannerActionUrl").value;
-    const isActive = document.getElementById("bannerIsActive").checked;
-
-    try {
-      const res = await fetch("/api/admin/banner", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({ imageUrl, actionUrl, isActive })
-      });
-
-      const data = await res.json();
-      if (data.success) {
-        alert("✅ Banner settings saved!");
-        loadBannerSettings();
-      } else {
-        alert("❌ Failed to save settings");
-      }
-    } catch (error) {
-      console.error("Error saving banner:", error);
-      alert("Failed to save banner");
     }
   };
 
