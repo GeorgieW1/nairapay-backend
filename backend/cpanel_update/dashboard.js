@@ -11,7 +11,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   const transactionsSection = document.getElementById("transactionsSection");
   const usersSection = document.getElementById("usersSection");
   const integrationsSection = document.getElementById("integrationsSection");
-  const bannersSection = document.getElementById("bannersSection"); // New
   const paystackSection = document.getElementById("paystackSection");
 
   const currencyFormatter = new Intl.NumberFormat("en-NG", {
@@ -36,7 +35,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     transactionsSection.classList.add("hidden");
     usersSection.classList.add("hidden");
     integrationsSection.classList.add("hidden");
-    bannersSection.classList.add("hidden"); // New
     paystackSection.classList.add("hidden");
   };
 
@@ -127,74 +125,10 @@ document.addEventListener("DOMContentLoaded", async () => {
       } else {
         tbody.innerHTML = '<tr><td colspan="4">No data available</td></tr>';
       }
-
-      // Render Charts
-      renderCharts(analytics.charts);
-
     } catch (error) {
       console.error("Error loading analytics:", error);
       alert("Failed to load analytics");
     }
-  }
-
-  function renderCharts(chartData) {
-    if (!chartData) return;
-
-    const labels = chartData.map(d => d.date);
-    const revenueData = chartData.map(d => d.revenue);
-    const volumeData = chartData.map(d => d.count);
-
-    const commonOptions = {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { labels: { color: '#e5e7eb' } }
-      },
-      scales: {
-        y: { ticks: { color: '#9ca3af' }, grid: { color: 'rgba(255, 255, 255, 0.1)' } },
-        x: { ticks: { color: '#9ca3af' }, grid: { color: 'rgba(255, 255, 255, 0.1)' } }
-      }
-    };
-
-    // Volume Chart
-    const ctxVolume = document.getElementById('volumeChart').getContext('2d');
-    if (volumeChart) volumeChart.destroy();
-
-    volumeChart = new Chart(ctxVolume, {
-      type: 'bar',
-      data: {
-        labels: labels,
-        datasets: [{
-          label: 'Transaction Count',
-          data: volumeData,
-          backgroundColor: 'rgba(59, 130, 246, 0.6)',
-          borderColor: '#3b82f6',
-          borderWidth: 1
-        }]
-      },
-      options: commonOptions
-    });
-
-    // Revenue Chart
-    const ctxRevenue = document.getElementById('revenueChart').getContext('2d');
-    if (revenueChart) revenueChart.destroy();
-
-    revenueChart = new Chart(ctxRevenue, {
-      type: 'line',
-      data: {
-        labels: labels,
-        datasets: [{
-          label: 'Revenue (NGN)',
-          data: revenueData,
-          backgroundColor: 'rgba(34, 197, 94, 0.2)',
-          borderColor: '#22c55e',
-          borderWidth: 2,
-          tension: 0.4,
-          fill: true
-        }]
-      },
-      options: commonOptions
-    });
   }
 
   function getServiceIcon(type) {
@@ -257,12 +191,6 @@ document.addEventListener("DOMContentLoaded", async () => {
             <td>${currencyFormatter.format(tx.amount)}</td>
             <td><span style="color: ${getStatusColor(tx.status)};">${tx.status}</span></td>
             <td>${tx.description}</td>
-            <td>
-              <button 
-                onclick="openEditTransactionModal('${tx._id}', '${tx.amount}', '${tx.type}', '${tx.reference || ''}', '${tx.status}', '${(tx.description || '').replace(/'/g, "\\'")}')"
-                style="background: rgba(59, 130, 246, 0.1); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.3); padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.8rem;"
-              >✎ Edit</button>
-            </td>
           </tr>
         `).join('');
       } else {
@@ -700,76 +628,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     } catch (error) {
       console.error("Error adding integration:", error);
       alert("Failed to add integration");
-    }
-  };
-
-
-
-  // ===== BANNERS SECTION =====
-  const bannersBtn = document.getElementById("bannersBtn");
-  if (bannersBtn) {
-    bannersBtn.onclick = async () => {
-      hideAllSections();
-      if (bannersSection) bannersSection.classList.remove("hidden");
-      setActiveLink("bannersBtn");
-      await loadBannerSettings();
-    };
-  }
-
-  async function loadBannerSettings() {
-    try {
-      const res = await fetch("/api/admin/banner", {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = await res.json();
-
-      const preview = document.getElementById("currentBannerPreview");
-      const imgInput = document.getElementById("bannerImageUrl");
-      const actionInput = document.getElementById("bannerActionUrl");
-      const activeCheck = document.getElementById("bannerIsActive");
-
-      if (data.success && data.banner) {
-        imgInput.value = data.banner.imageUrl || '';
-        actionInput.value = data.banner.actionUrl || '';
-        activeCheck.checked = data.banner.isActive;
-
-        if (data.banner.isActive && data.banner.imageUrl) {
-          preview.innerHTML = `<img src="${data.banner.imageUrl}" alt="Banner Preview">`;
-        } else {
-          preview.innerHTML = '<span style="color: #9ca3af;">Banner Disabled or No Image</span>';
-        }
-      }
-    } catch (error) {
-      console.error("Error loading banner:", error);
-    }
-  }
-
-  document.getElementById("bannerForm").onsubmit = async (e) => {
-    e.preventDefault();
-    const imageUrl = document.getElementById("bannerImageUrl").value;
-    const actionUrl = document.getElementById("bannerActionUrl").value;
-    const isActive = document.getElementById("bannerIsActive").checked;
-
-    try {
-      const res = await fetch("/api/admin/banner", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({ imageUrl, actionUrl, isActive })
-      });
-
-      const data = await res.json();
-      if (data.success) {
-        alert("✅ Banner settings saved!");
-        loadBannerSettings();
-      } else {
-        alert("❌ Failed to save settings");
-      }
-    } catch (error) {
-      console.error("Error saving banner:", error);
-      alert("Failed to save banner");
     }
   };
 

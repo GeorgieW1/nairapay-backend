@@ -13,10 +13,10 @@ body {
   justify-content: center;
   min-height: 100vh;
   background: #0a0e27;
-  background-image: 
-    radial-gradient(at 20% 50%, rgba(34, 197, 94, 0.08) 0px, transparent 50%),
-    radial-gradient(at 80% 80%, rgba(59, 130, 246, 0.08) 0px, transparent 50%),
-    radial-gradient(at 40% 20%, rgba(168, 85, 247, 0.06) 0px, transparent 50%);
+  /* Brand Blue Background Accent */
+  background-image:
+    radial-gradient(at 50% 0%, rgba(59, 130, 246, 0.15) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(59, 130, 246, 0.1) 0px, transparent 50%);
   background-attachment: fixed;
   padding: 20px;
 }
@@ -97,32 +97,29 @@ button {
 }
 
 .login-brand .logo {
-  width: 48px;
-  height: 48px;
-  background: linear-gradient(135deg, #3b82f6 0%, #22c55e 100%);
-  border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.4);
-  position: relative;
-  overflow: hidden;
+  width: 220px;
+  /* Increased for better visibility */
+  height: 70px;
+  background: url('/logo.png') no-repeat center center;
+  background-size: contain;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 .login-brand .logo::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, transparent 100%);
+  display: none;
 }
 
 .login-title {
   margin: 0;
   font-family: 'Space Grotesk', sans-serif;
-  background: linear-gradient(135deg, #3b82f6 0%, #22c55e 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: #3b82f6;
+  /* Solid Blue */
   font-size: 28px;
   font-weight: 700;
   letter-spacing: -0.5px;
+  display: none;
+  /* Hiding text since logo has text */
 }
 
 .login-subtitle {
@@ -172,7 +169,8 @@ button {
 .btn-primary {
   width: 100%;
   padding: 16px 20px;
-  background: linear-gradient(135deg, #3b82f6 0%, #22c55e 100%);
+  background: #3b82f6;
+  /* Solid Blue */
   border-radius: 12px;
   color: #fff;
   font-weight: 600;
@@ -316,7 +314,7 @@ button {
 }
 
 .stat-card {
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(34, 197, 94, 0.1) 100%);
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%);
   border: 1px solid rgba(59, 130, 246, 0.2);
   border-radius: 12px;
   padding: 20px;
@@ -331,7 +329,7 @@ button {
 }
 
 .stat-value {
-  color: #22c55e;
+  color: #3b82f6;
   font-size: 32px;
   font-weight: 700;
   margin: 10px 0;

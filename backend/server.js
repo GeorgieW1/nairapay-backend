@@ -45,7 +45,20 @@ app.use(pinoHttp({
   },
 }));
 // Security headers
-app.use(helmet());
+// Security headers - Custom CSP to allow Chart.js CDN
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "cdn.jsdelivr.net"],
+      scriptSrcAttr: ["'self'", "'unsafe-inline'"], // Required for inline onclick handlers
+      styleSrc: ["'self'", "'unsafe-inline'", "fonts.googleapis.com"],
+      fontSrc: ["'self'", "fonts.gstatic.com"],
+      imgSrc: ["'self'", "data:", "https:", "http:"],
+      connectSrc: ["'self'", "https://cdn.jsdelivr.net"], // Allow map files
+    },
+  },
+}));
 
 // CORS - restrict to configured frontend
 const allowedOrigin = process.env.FRONTEND_ORIGIN || "*";

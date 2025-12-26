@@ -4,11 +4,14 @@ import jwt from "jsonwebtoken";
 export const verifyToken = (req, res, next) => {
   const authHeader = req.headers.authorization;
 
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return res.status(401).json({ success: false, error: "No token provided" });
+  if (!authHeader) {
+    return res.status(401).json({ success: false, error: "No token provided" }); // Consistent error message
   }
 
-  const token = authHeader.split(" ")[1];
+  // ✅ Flexible Token Extraction (Handle "Bearer " prefix or raw token)
+  const token = authHeader.startsWith("Bearer ")
+    ? authHeader.slice(7, authHeader.length).trim()
+    : authHeader;
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
