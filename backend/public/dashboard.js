@@ -14,10 +14,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   const bannersSection = document.getElementById("bannersSection"); // New
   const paystackSection = document.getElementById("paystackSection");
 
-  // Chart instances
-  let volumeChart = null;
-  let revenueChart = null;
-
   const currencyFormatter = new Intl.NumberFormat("en-NG", {
     style: "currency",
     currency: "NGN",
@@ -358,9 +354,6 @@ document.addEventListener("DOMContentLoaded", async () => {
           <td>${user.name}</td>
           <td>${user.email}</td>
           <td>
-            <span class="role-badge role-${user.role || 'user'}">${user.role || 'USER'}</span>
-          </td>
-          <td>
             ${user.isEmailVerified
           ? '<span style="background: rgba(34, 197, 94, 0.15); color: #22c55e; padding: 4px 12px; border-radius: 12px; font-size: 0.85rem; font-weight: 600;">✓ Verified</span>'
           : '<span style="background: rgba(251, 146, 60, 0.15); color: #fb923c; padding: 4px 12px; border-radius: 12px; font-size: 0.85rem; font-weight: 600;">⚠ Unverified</span>'
@@ -368,162 +361,21 @@ document.addEventListener("DOMContentLoaded", async () => {
           </td>
           <td>${currencyFormatter.format(user.walletBalance || 0)}</td>
           <td>${new Date(user.createdAt).toLocaleDateString()}</td>
-          </td>
-          <td>${currencyFormatter.format(user.walletBalance || 0)}</td>
-          <td>${new Date(user.createdAt).toLocaleDateString()}</td>
           <td>
-            <div class="action-buttons" style="display: flex; gap: 8px;">
-               ${user.role !== 'admin' ?
-          `<button class="promote-btn" onclick="changeUserRole('${user._id}', 'admin')" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6; padding: 6px 10px; font-size: 0.8rem;">⬆ Admin</button>`
-          : `<button class="demote-btn" onclick="changeUserRole('${user._id}', 'user')" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b; padding: 6px 10px; font-size: 0.8rem;">⬇ User</button>`
-        }
-              <button 
-                class="delete-user-btn"
-                data-user-id="${user._id}"
-                data-user-name="${user.name || user.email}"
-                style="background: rgba(239, 68, 68, 0.1); color: #ef4444; padding: 6px 10px; border: none; border-radius: 8px; cursor: pointer; font-size: 0.8rem; font-weight: 600;"
-              >🗑️</button>
-            </div>
+            <button 
+              class="delete-user-btn"
+              data-user-id="${user._id}"
+              data-user-name="${user.name || user.email}"
+              style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; padding: 8px 16px; border: none; border-radius: 8px; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.2s;"
+            >❌ Delete</button>
           </td>
         </tr>
       `).join('');
     } catch (error) {
       console.error("Error fetching users:", error);
-      tbody.innerHTML = "<tr><td colspan='8'>Failed to load users</td></tr>";
+      tbody.innerHTML = "<tr><td colspan='7'>Failed to load users</td></tr>";
     }
   }
-
-  // Change User Role
-  window.changeUserRole = async (userId, newRole) => {
-    if (!confirm(`Are you sure you want to change this user's role to ${newRole.toUpperCase()}?`)) return;
-
-    try {
-      const res = await fetch(`/api/admin/users/${userId}/role`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({ role: newRole })
-      });
-
-      const data = await res.json();
-      if (data.success) {
-        alert("✅ Role updated successfully");
-        await fetchAndRenderUsers();
-      } else {
-        alert(`❌ ${data.message}`);
-      }
-    } catch (error) {
-      console.error("Error changing role:", error);
-      alert("Failed to change role");
-    }
-  };
-
-  // --- Edit Transaction Modal Logic ---
-  const editTransModal = document.getElementById("editTransactionModal");
-  const closeTransModalBtn = editTransModal.querySelector(".close-modal");
-
-  window.openEditTransactionModal = (id, amount, type, ref, status, desc) => {
-    document.getElementById("editTransId").value = id;
-    document.getElementById("editTransAmount").value = currencyFormatter.format(amount);
-    document.getElementById("editTransType").value = type.toUpperCase();
-    document.getElementById("editTransRef").value = ref;
-    document.getElementById("editTransStatus").value = status;
-    document.getElementById("editTransDesc").value = desc === 'undefined' ? '' : desc;
-
-    editTransModal.style.display = "block";
-  };
-
-  closeTransModalBtn.onclick = () => {
-    editTransModal.style.display = "none";
-  };
-
-  document.getElementById("editTransactionForm").onsubmit = async (e) => {
-    e.preventDefault();
-    const id = document.getElementById("editTransId").value;
-    const reference = document.getElementById("editTransRef").value;
-    const status = document.getElementById("editTransStatus").value;
-    const description = document.getElementById("editTransDesc").value;
-
-    try {
-      const res = await fetch(`/api/admin/transactions/${id}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({ reference, status, description })
-      });
-
-      const data = await res.json();
-      if (data.success) {
-        alert("✅ Transaction updated successfully");
-        editTransModal.style.display = "none";
-        loadTransactions(currentTransactionsPage); // Refresh table
-      } else {
-        alert(`❌ ${data.message}`);
-      }
-    } catch (error) {
-      console.error("Error updating transaction:", error);
-      alert("Failed to update transaction");
-    }
-  };
-
-  // Add User Modal Logic
-  const addUserModal = document.getElementById("addUserModal");
-  const addUserBtn = document.getElementById("addUserBtn");
-  const closeModal = document.querySelector(".close-modal");
-
-  addUserBtn.onclick = () => {
-    addUserModal.style.display = "block";
-  };
-
-  closeModal.onclick = () => {
-    addUserModal.style.display = "none";
-  };
-
-  window.onclick = (event) => {
-    if (event.target == addUserModal) {
-      addUserModal.style.display = "none";
-    }
-  };
-
-  // Add User Form Submission
-  document.getElementById("addUserForm").onsubmit = async (e) => {
-    e.preventDefault();
-
-    const name = document.getElementById("newUserName").value;
-    const email = document.getElementById("newUserEmail").value;
-    const phone = document.getElementById("newUserPhone").value;
-    const role = document.getElementById("newUserRole").value;
-    const password = document.getElementById("newUserPassword").value;
-
-    try {
-      const res = await fetch("/api/admin/users", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({ name, email, phone, role, password })
-      });
-
-      const data = await res.json();
-
-      if (data.success) {
-        alert("✅ User created successfully!");
-        addUserModal.style.display = "none";
-        document.getElementById("addUserForm").reset();
-        await fetchAndRenderUsers();
-      } else {
-        alert(`❌ ${data.message}`);
-      }
-    } catch (error) {
-      console.error("Error creating user:", error);
-      alert("Failed to create user");
-    }
-  };
 
   // Event delegation for delete user buttons
   document.addEventListener('click', async (e) => {

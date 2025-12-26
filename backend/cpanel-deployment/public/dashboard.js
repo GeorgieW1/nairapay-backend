@@ -223,7 +223,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   async function fetchAndRenderUsers() {
     const tbody = document.querySelector("#usersTable tbody");
-    tbody.innerHTML = "<tr><td colspan='7'>Loading...</td></tr>";
+    tbody.innerHTML = "<tr><td colspan='5'>Loading...</td></tr>";
 
     try {
       const res = await fetch("/api/admin/users", {
@@ -246,67 +246,21 @@ document.addEventListener("DOMContentLoaded", async () => {
       fundUserSelect.innerHTML = '<option value="" disabled selected>Select a user</option>' + userOptions;
       deductUserSelect.innerHTML = '<option value="" disabled selected>Select a user</option>' + userOptions;
 
-      // Render users table with email verification status
+      // Render users table
       tbody.innerHTML = cachedUsers.map((user, i) => `
         <tr>
           <td>${i + 1}</td>
           <td>${user.name}</td>
           <td>${user.email}</td>
-          <td>
-            ${user.isEmailVerified
-          ? '<span style="background: rgba(34, 197, 94, 0.15); color: #22c55e; padding: 4px 12px; border-radius: 12px; font-size: 0.85rem; font-weight: 600;">✓ Verified</span>'
-          : '<span style="background: rgba(251, 146, 60, 0.15); color: #fb923c; padding: 4px 12px; border-radius: 12px; font-size: 0.85rem; font-weight: 600;">⚠ Unverified</span>'
-        }
-          </td>
           <td>${currencyFormatter.format(user.walletBalance || 0)}</td>
           <td>${new Date(user.createdAt).toLocaleDateString()}</td>
-          <td>
-            <button 
-              class="delete-user-btn"
-              data-user-id="${user._id}"
-              data-user-name="${user.name || user.email}"
-              style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; padding: 8px 16px; border: none; border-radius: 8px; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.2s;"
-            >❌ Delete</button>
-          </td>
         </tr>
       `).join('');
     } catch (error) {
       console.error("Error fetching users:", error);
-      tbody.innerHTML = "<tr><td colspan='7'>Failed to load users</td></tr>";
+      tbody.innerHTML = "<tr><td colspan='5'>Failed to load users</td></tr>";
     }
   }
-
-  // Event delegation for delete user buttons
-  document.addEventListener('click', async (e) => {
-    if (e.target.classList.contains('delete-user-btn') || e.target.closest('.delete-user-btn')) {
-      const btn = e.target.classList.contains('delete-user-btn') ? e.target : e.target.closest('.delete-user-btn');
-      const userId = btn.dataset.userId;
-      const userName = btn.dataset.userName;
-
-      if (!confirm(`⚠️ Are you sure you want to delete ${userName}?\n\nThis will permanently delete:\n• User account\n• All their transactions\n\nThis action CANNOT be undone!`)) {
-        return;
-      }
-
-      try {
-        const res = await fetch(`/api/admin/users/${userId}`, {
-          method: "DELETE",
-          headers: { Authorization: `Bearer ${token}` }
-        });
-
-        const data = await res.json();
-
-        if (data.success) {
-          alert(`✅ ${data.message}`);
-          await fetchAndRenderUsers();
-        } else {
-          alert(`❌ ${data.message}`);
-        }
-      } catch (error) {
-        console.error("Error deleting user:", error);
-        alert(`❌ Failed to delete user: ${error.message}`);
-      }
-    }
-  });
 
   // Fund wallet form
   document.getElementById("fundWalletForm").onsubmit = async (e) => {

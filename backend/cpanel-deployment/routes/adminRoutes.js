@@ -116,7 +116,7 @@ router.post("/api-keys", verifyAdmin, async (req, res) => {
     const { service, provider, key, createdBy } = req.body;
     const newKey = new ApiKey({ service, provider, key, createdBy });
     await newKey.save();
-    const keyMasked = key && key.length > 8 ? `${key.slice(0, 4)}****${key.slice(-4)}` : "****";
+    const keyMasked = key && key.length > 8 ? `${key.slice(0,4)}****${key.slice(-4)}` : "****";
     res.json({ success: true, message: "API Key added successfully", keyMasked });
   } catch (error) {
     if (req.log) req.log.error({ err: error }, "Error adding key");
@@ -135,7 +135,7 @@ router.get("/api-keys", verifyAdmin, async (req, res) => {
       createdBy: k.createdBy,
       createdAt: k.createdAt,
       updatedAt: k.updatedAt,
-      keyMasked: typeof k.key === "string" && k.key.length > 8 ? `${k.key.slice(0, 4)}****${k.key.slice(-4)}` : "****",
+      keyMasked: typeof k.key === "string" && k.key.length > 8 ? `${k.key.slice(0,4)}****${k.key.slice(-4)}` : "****",
     }));
     res.json({ success: true, keys: masked });
   } catch (error) {
@@ -193,11 +193,11 @@ router.get("/integrations", verifyAdmin, async (req, res) => {
       updatedAt: i.updatedAt,
       credentials: Array.isArray(i.credentials)
         ? i.credentials.map((c) => ({
-          label: c.label,
-          valueMasked: typeof c.value === "string" && c.value.length > 8
-            ? `${c.value.slice(0, 4)}****${c.value.slice(-4)}`
-            : "****",
-        }))
+            label: c.label,
+            valueMasked: typeof c.value === "string" && c.value.length > 8
+              ? `${c.value.slice(0, 4)}****${c.value.slice(-4)}`
+              : "****",
+          }))
         : [],
     }));
     res.json({ success: true, integrations: masked });
@@ -226,21 +226,21 @@ router.delete("/integrations/:id", verifyAdmin, async (req, res) => {
 router.get("/transactions", verifyAdmin, async (req, res) => {
   try {
     const { type, status, userId, startDate, endDate, search, limit = 50, page = 1 } = req.query;
-
+    
     // Build query
     const query = {};
-
+    
     if (type) query.type = type;
     if (status) query.status = status;
     if (userId) query.userId = userId;
-
+    
     // Date range filter
     if (startDate || endDate) {
       query.createdAt = {};
       if (startDate) query.createdAt.$gte = new Date(startDate);
       if (endDate) query.createdAt.$lte = new Date(endDate);
     }
-
+    
     // Search by description or phone
     if (search) {
       query.$or = [
@@ -248,9 +248,9 @@ router.get("/transactions", verifyAdmin, async (req, res) => {
         { 'metadata.phone': { $regex: search, $options: 'i' } }
       ];
     }
-
+    
     const skip = (parseInt(page) - 1) * parseInt(limit);
-
+    
     const [transactions, total] = await Promise.all([
       Transaction.find(query)
         .populate('userId', 'name email')
@@ -259,7 +259,7 @@ router.get("/transactions", verifyAdmin, async (req, res) => {
         .skip(skip),
       Transaction.countDocuments(query)
     ]);
-
+    
     res.json({
       success: true,
       transactions,
@@ -293,13 +293,13 @@ router.post("/users/:id/deduct", verifyAdmin, async (req, res) => {
       User.findById(req.params.id),
       User.findById(req.user?.id).select("email name"),
     ]);
-
+    
     if (!user) {
       return res.status(404).json({ success: false, message: "User not found" });
     }
 
     const balanceBefore = user.walletBalance || 0;
-
+    
     // Check if user has sufficient balance
     if (balanceBefore < parsedAmount) {
       return res.status(400).json({
@@ -308,7 +308,7 @@ router.post("/users/:id/deduct", verifyAdmin, async (req, res) => {
         currentBalance: balanceBefore
       });
     }
-
+    
     const balanceAfter = balanceBefore - parsedAmount;
 
     user.walletBalance = balanceAfter;
@@ -348,56 +348,13 @@ router.post("/users/:id/deduct", verifyAdmin, async (req, res) => {
   }
 });
 
-// ✅ Delete user
-router.delete("/users/:id", verifyAdmin, async (req, res) => {
-  try {
-    const userId = req.params.id;
-
-    // Prevent admin from deleting themselves
-    if (userId === req.user.id) {
-      return res.status(400).json({
-        success: false,
-        message: "Cannot delete your own account"
-      });
-    }
-
-    const user = await User.findById(userId);
-
-    if (!user) {
-      return res.status(404).json({ success: false, message: "User not found" });
-    }
-
-    // Prevent deleting other admins
-    if (user.role === "admin") {
-      return res.status(403).json({
-        success: false,
-        message: "Cannot delete admin users. Change role first."
-      });
-    }
-
-    // Delete user and their transactions
-    await Promise.all([
-      User.findByIdAndDelete(userId),
-      Transaction.deleteMany({ userId })
-    ]);
-
-    res.json({
-      success: true,
-      message: `User ${user.name || user.email} deleted successfully`
-    });
-  } catch (error) {
-    if (req.log) req.log.error({ err: error }, "Error deleting user");
-    res.status(500).json({ success: false, message: "Failed to delete user" });
-  }
-});
-
 // 3️⃣ Dashboard Analytics
 router.get("/analytics", verifyAdmin, async (req, res) => {
   try {
     const now = new Date();
     const todayStart = new Date(now.setHours(0, 0, 0, 0));
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-
+    
     // Today's stats
     const [todayTransactions, todayRevenue, monthTransactions, monthRevenue, totalUsers, activeUsers] = await Promise.all([
       Transaction.countDocuments({
@@ -419,20 +376,20 @@ router.get("/analytics", verifyAdmin, async (req, res) => {
       User.countDocuments(),
       User.countDocuments({ updatedAt: { $gte: todayStart } })
     ]);
-
+    
     // Transaction success/failure rates
     const [successCount, failedCount, pendingCount] = await Promise.all([
       Transaction.countDocuments({ createdAt: { $gte: todayStart }, status: "completed" }),
       Transaction.countDocuments({ createdAt: { $gte: todayStart }, status: "failed" }),
       Transaction.countDocuments({ createdAt: { $gte: todayStart }, status: "pending" })
     ]);
-
+    
     // Revenue by service type
     const serviceRevenue = await Transaction.aggregate([
       { $match: { createdAt: { $gte: monthStart }, status: "completed", type: { $ne: "credit" } } },
       { $group: { _id: "$type", total: { $sum: "$amount" }, count: { $sum: 1 } } }
     ]);
-
+    
     // Top users by spending
     const topUsers = await Transaction.aggregate([
       { $match: { createdAt: { $gte: monthStart }, status: "completed", type: { $ne: "credit" } } },
@@ -443,7 +400,7 @@ router.get("/analytics", verifyAdmin, async (req, res) => {
       { $unwind: "$user" },
       { $project: { name: "$user.name", email: "$user.email", totalSpent: 1, transactionCount: 1 } }
     ]);
-
+    
     res.json({
       success: true,
       analytics: {
@@ -478,34 +435,6 @@ router.get("/analytics", verifyAdmin, async (req, res) => {
   }
 });
 
-// 🔍 Debug: Check VTPass integrations in database
-router.get("/integrations/debug-vtpass", verifyAdmin, async (req, res) => {
-  try {
-    const integrations = await Integration.find({
-      providerName: { $regex: /vtpass/i }
-    });
-
-    const masked = integrations.map(i => ({
-      _id: i._id,
-      category: i.category,
-      mode: i.mode,
-      baseUrl: i.baseUrl,
-      credentialLabels: i.credentials.map(c => c.label),
-      hasStaticKey: i.credentials.some(c => c.label?.toLowerCase().includes("static")),
-      hasPublicKey: i.credentials.some(c => c.label?.toLowerCase().includes("public")),
-      hasSecretKey: i.credentials.some(c => c.label?.toLowerCase().includes("secret"))
-    }));
-
-    res.json({
-      success: true,
-      count: integrations.length,
-      integrations: masked
-    });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
 // 4️⃣ Test VTpass Connection
 router.post("/integrations/test-vtpass", verifyAdmin, async (req, res) => {
   try {
@@ -514,72 +443,67 @@ router.post("/integrations/test-vtpass", verifyAdmin, async (req, res) => {
       providerName: { $regex: /vtpass/i },
       mode: "live"
     });
-
+    
     if (!integration) {
       integration = await Integration.findOne({
         providerName: { $regex: /vtpass/i },
         mode: "sandbox"
       });
     }
-
+    
     if (!integration) {
       return res.status(404).json({
         success: false,
         message: "VTpass integration not found. Please setup VTpass credentials first."
       });
     }
-
+    
     // Get all three keys from credentials array
-    const staticKeyCred = integration.credentials.find(c =>
+    const staticKeyCred = integration.credentials.find(c => 
       c.label && c.label.toLowerCase().includes("static"));
-    const publicKeyCred = integration.credentials.find(c =>
+    const publicKeyCred = integration.credentials.find(c => 
       c.label && c.label.toLowerCase().includes("public"));
-
+    
     const staticKey = staticKeyCred?.value;
     const publicKey = publicKeyCred?.value;
-
+    
     if (!staticKey || !publicKey) {
       return res.status(400).json({
         success: false,
         message: `Missing credentials. Found: ${integration.credentials.map(c => c.label).join(", ")}`,
-        hint: "VTPass requires: Static Key (api-key) and Public Key (PK_...)"
+        hint: "VTPass requires: Static Key, Public Key (PK_...), and Secret Key (SK_...)"
       });
     }
-
+    
     // Test with VTpass balance endpoint
     // GET requests use: api-key (static) + public-key (PK_)
     const fetch = (await import('node-fetch')).default;
-
-    // Test with service-variations endpoint using correct headers for GET request
-    const testResponse = await fetch(`${integration.baseUrl}/service-variations?serviceID=mtn`, {
+    const response = await fetch(`${integration.baseUrl}/balance`, {
       method: "GET",
       headers: {
-        "api-key": staticKey,      // Static key
-        "public-key": publicKey    // PK_ key for GET requests
+        "api-key": staticKey,
+        "public-key": publicKey
       }
     });
-
-    const testData = await testResponse.json();
-
-    if (testResponse.ok && testData.code !== "087") {
+    
+    const data = await response.json();
+    
+    // VTPass returns code: 1 for successful balance check, "000" for purchases
+    if (data.code === 1 || data.code === "000" || data.response_description?.toLowerCase().includes("successful")) {
       res.json({
         success: true,
-        message: `✅ VTpass connection successful!`,
-        mode: `${integration.mode.toUpperCase()} MODE`,
-        balance: "Balance unavailable (credentials limited)",
-        testMethod: "Service Variations Check",
-        apiResponse: testData.code,
-        note: "API connection verified - ready for transactions",
-        response: testData
+        message: `✅ VTpass connection successful! Balance: ₦${data.contents?.balance || data.content?.balance || "N/A"}`,
+        mode: integration.mode,
+        balance: data.contents?.balance || data.content?.balance || "N/A",
+        response: data
       });
     } else {
       res.status(400).json({
         success: false,
-        message: "❌ VTpass connection failed",
-        mode: `${integration.mode.toUpperCase()} MODE`,
-        error: testData.response_description || testData.content?.errors || testData.message || "Unknown error",
-        code: testData.code,
-        hint: testData.code === "087" ? "Invalid credentials. Check if keys are activated on VTPass dashboard." : "Connection or API error"
+        message: "VTpass connection failed",
+        error: data.response_description || data.message || "Unknown error",
+        code: data.code,
+        hint: data.code === "087" ? "Invalid credentials. Check if keys are activated on VTPass dashboard." : undefined
       });
     }
   } catch (error) {
@@ -596,11 +520,11 @@ router.post("/integrations/test-vtpass", verifyAdmin, async (req, res) => {
 router.get("/transactions/:id", verifyAdmin, async (req, res) => {
   try {
     const transaction = await Transaction.findById(req.params.id).populate('userId', 'name email phone');
-
+    
     if (!transaction) {
       return res.status(404).json({ success: false, message: "Transaction not found" });
     }
-
+    
     res.json({ success: true, transaction });
   } catch (error) {
     if (req.log) req.log.error({ err: error }, "Error fetching transaction");
@@ -616,17 +540,17 @@ router.post("/integrations/setup-live", verifyAdmin, async (req, res) => {
       publicKey: "PK_394bdd37d05020ef6b1c8b82be5af1e70b5768b5548",
       secretKey: "SK_98879d3e8ffab5f682a973c61bb2b8eb064f7513221"
     };
-
+    
     // Delete old VTpass integrations
     const deleteResult = await Integration.deleteMany({
       providerName: { $regex: /vtpass/i }
     });
-
+    
     // Create live integrations
     const categories = ["airtime", "data", "electricity", "tv"];
     const created = [];
     const errors = [];
-
+    
     for (const category of categories) {
       try {
         const integration = await Integration.create({
@@ -646,7 +570,7 @@ router.post("/integrations/setup-live", verifyAdmin, async (req, res) => {
         errors.push({ category, error: err.message });
       }
     }
-
+    
     res.json({
       success: created.length > 0,
       message: `✅ Setup complete! Deleted ${deleteResult.deletedCount} old integrations, created ${created.length} live integrations`,

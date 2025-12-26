@@ -16,11 +16,6 @@ const userSchema = new mongoose.Schema(
     isEmailVerified: { type: Boolean, default: false },
     emailVerificationOTP: { type: String },
     emailVerificationExpires: { type: Date },
-
-    // Push Notifications (FCM)
-    fcmToken: { type: String },
-    deviceType: { type: String, enum: ['android', 'ios', 'web'] },
-    fcmTokenUpdatedAt: { type: Date },
   },
   { timestamps: true }
 );

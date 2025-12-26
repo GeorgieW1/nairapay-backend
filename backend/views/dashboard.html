@@ -22,8 +22,9 @@
       height: 100vh;
       background: #0a0e27;
       background-image:
-        radial-gradient(at 50% 0%, rgba(59, 130, 246, 0.15) 0px, transparent 50%),
-        radial-gradient(at 100% 0%, rgba(59, 130, 246, 0.1) 0px, transparent 50%);
+        radial-gradient(at 20% 50%, rgba(34, 197, 94, 0.08) 0px, transparent 50%),
+        radial-gradient(at 80% 80%, rgba(59, 130, 246, 0.08) 0px, transparent 50%),
+        radial-gradient(at 40% 20%, rgba(168, 85, 247, 0.06) 0px, transparent 50%);
       background-attachment: fixed;
       color: #e5e7eb;
     }
@@ -609,49 +610,9 @@
       gap: 20px;
     }
 
-    /* Mobile Menu Button */
-    #mobileMenuBtn {
-      display: none;
-      position: fixed;
-      top: 20px;
-      left: 20px;
-      z-index: 100;
-      padding: 10px;
-      background: #3b82f6;
-      border: none;
-      border-radius: 8px;
-      color: white;
-      cursor: pointer;
-      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
-    }
-
-    /* Responsive Tables */
-    .table-container {
-      width: 100%;
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
-      margin-top: 32px;
-      border-radius: 16px;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-      border: 1px solid rgba(59, 130, 246, 0.1);
-      background: #111827;
-    }
-
-    .table-container table {
-      margin-top: 0;
-      border: none;
-      box-shadow: none;
-      min-width: 800px;
-      /* Ensure table doesn't squash on small screens */
-    }
-
     @media (max-width: 768px) {
       .form-row {
         grid-template-columns: 1fr;
-      }
-
-      #mobileMenuBtn {
-        display: block;
       }
 
       .sidebar {
@@ -884,18 +845,6 @@
           </div>
         </div>
 
-        <div
-          style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 24px; margin-bottom: 30px;">
-          <div class="chart-container">
-            <h3>📈 Transaction Volume (Last 7 Days)</h3>
-            <canvas id="volumeChart"></canvas>
-          </div>
-          <div class="chart-container">
-            <h3>💰 Revenue Growth (Last 7 Days)</h3>
-            <canvas id="revenueChart"></canvas>
-          </div>
-        </div>
-
         <div class="analytics-section">
           <h2>Service Breakdown (This Month)</h2>
           <div id="serviceBreakdown">Loading...</div>
@@ -903,23 +852,21 @@
 
         <div class="analytics-section">
           <h2>Top Users</h2>
-          <div class="table-container">
-            <table id="topUsersTable">
-              <thead>
-                <tr>
-                  <th>User</th>
-                  <th>Email</th>
-                  <th>Total Spent</th>
-                  <th>Transactions</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td colspan="4">Loading...</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+          <table id="topUsersTable">
+            <thead>
+              <tr>
+                <th>User</th>
+                <th>Email</th>
+                <th>Total Spent</th>
+                <th>Transactions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td colspan="4">Loading...</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </section>
@@ -952,27 +899,23 @@
         <button id="clearFilters">Clear</button>
       </div>
 
-      <div class="table-container">
-        <table id="transactionsTable">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>User</th>
-              <th>Type</th>
-              <th>Amount</th>
-              <th>Status</th>
-              <th>Status</th>
-              <th>Description</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td colspan="7">Loading...</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+      <table id="transactionsTable">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>User</th>
+            <th>Type</th>
+            <th>Amount</th>
+            <th>Status</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td colspan="6">Loading...</td>
+          </tr>
+        </tbody>
+      </table>
 
       <div id="transactionsPagination"></div>
 
@@ -1069,57 +1012,20 @@
         <button type="submit" style="background: #ef4444;">⚠️ Deduct from Wallet</button>
       </form>
 
-      <div class="table-container">
-        <table id="usersTable">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Role</th>
-              <th>Email Status</th>
-              <th>Wallet Balance</th>
-              <th>Date Joined</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
-
-      <!-- Add User Modal -->
-      <div id="addUserModal" class="modal">
-        <div class="modal-content">
-          <span class="close-modal">&times;</span>
-          <h2>Add New User</h2>
-          <form id="addUserForm">
-            <div class="form-group">
-              <label for="newUserName">Full Name</label>
-              <input type="text" id="newUserName" required placeholder="John Doe">
-            </div>
-            <div class="form-group">
-              <label for="newUserEmail">Email Address</label>
-              <input type="email" id="newUserEmail" required placeholder="john@example.com">
-            </div>
-            <div class="form-group">
-              <label for="newUserPhone">Phone Number</label>
-              <input type="tel" id="newUserPhone" placeholder="08012345678">
-            </div>
-            <div class="form-group">
-              <label for="newUserRole">Role</label>
-              <select id="newUserRole">
-                <option value="user">User</option>
-                <option value="admin">Admin</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="newUserPassword">Password</label>
-              <input type="password" id="newUserPassword" required placeholder="Minimum 6 characters">
-            </div>
-            <button type="submit" style="width: 100%;">Create User</button>
-          </form>
-        </div>
-      </div>
+      <table id="usersTable">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Email Status</th>
+            <th>Wallet Balance</th>
+            <th>Date Joined</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
     </section>
 
     <!-- Integrations Section -->

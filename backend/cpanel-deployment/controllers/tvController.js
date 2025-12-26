@@ -2,8 +2,6 @@ import User from "../models/User.js";
 import Transaction from "../models/Transaction.js";
 import Integration from "../models/Integration.js";
 import fetch from "node-fetch";
-import { sendTransactionNotification } from "../services/pushNotificationService.js";
-import { sendTransactionReceipt, sendAdminAlert } from "../services/emailService.js";
 
 /**
  * Verify Smartcard Number
@@ -343,18 +341,6 @@ export const subscribeTVService = async (req, res) => {
                         vtpassResponse: data
                     }
                 });
-
-                // Send push notification (async)
-                sendTransactionNotification(user._id, 'tv', amount, 'completed')
-                    .catch(err => console.error('Failed to send push notification:', err));
-
-                // Send email receipt to user (async)
-                sendTransactionReceipt(user.email, transaction, user)
-                    .catch(err => console.error('Failed to send receipt email:', err));
-
-                // Send admin alert (async)
-                sendAdminAlert(transaction, user)
-                    .catch(err => console.error('Failed to send admin alert:', err));
 
                 return res.status(200).json({
                     success: true,

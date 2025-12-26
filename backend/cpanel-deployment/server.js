@@ -1,13 +1,11 @@
-import dotenv from "dotenv";
-dotenv.config(); // Load env vars immediately
-
 import express from "express";
+import dotenv from "dotenv";
 import cors from "cors";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import pinoHttp from "pino-http";
 import logger from "./utils/logger.js";
-import { admin as firebaseAdmin, firebaseInitialized } from "./config/firebase.js"; // ✅ Centralized Config
+import admin from "firebase-admin";
 import connectDB from "./config/db.js";
 import fs from "fs";
 import path from "path";
@@ -20,29 +18,26 @@ import walletRoutes from "./routes/walletRoutes.js";
 import transactionRoutes from "./routes/transactionRoutes.js";
 import serviceRoutes from "./routes/serviceRoutes.js";
 import dataRoutes from "./routes/dataRoutes.js";
-import notificationRoutes from "./routes/notificationRoutes.js";
+
+dotenv.config();
 
 const app = express();
-
-// Trust Railway proxy (fixes X-Forwarded-For header issues)
-app.set('trust proxy', 1);
-
 // Structured logging with redaction
 app.use(pinoHttp({
-  logger,
-  redact: {
-    paths: [
-      "req.headers.authorization",
-      "req.headers.cookie",
-      "req.body.password",
-      "req.body.key",
-      "req.body.secret",
-      "res.body.token",
-      "res.body.key",
-      "res.body.secret",
-    ],
-    remove: true,
-  },
+	logger,
+	redact: {
+		paths: [
+			"req.headers.authorization",
+			"req.headers.cookie",
+			"req.body.password",
+			"req.body.key",
+			"req.body.secret",
+			"res.body.token",
+			"res.body.key",
+			"res.body.secret",
+		],
+		remove: true,
+	},
 }));
 // Security headers
 app.use(helmet());
@@ -73,12 +68,39 @@ app.use("/api/admin", sensitiveLimiter);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// ✅ Initialize Firebase Admin SDK (Moved to config/firebase.js)
-// Imported at the top
+// ✅ Initialize Firebase Admin SDK (Optional)
+let firebaseInitialized = false;
+try {
+  const serviceAccountPath = "./config/firebaseServiceAccountKey.json";
 
+  if (fs.existsSync(serviceAccountPath)) {
+    const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, "utf8"));
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount),
+    });
+    firebaseInitialized = true;
+    console.log("🔥 Firebase Admin initialized from local service account");
+  } else if (process.env.FIREBASE_PRIVATE_KEY && process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_CLIENT_EMAIL) {
+    admin.initializeApp({
+      credential: admin.credential.cert({
+        projectId: process.env.FIREBASE_PROJECT_ID,
+        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+        privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, "\n"),
+      }),
+    });
+    firebaseInitialized = true;
+    console.log("🔥 Firebase Admin initialized from environment variables");
+  } else {
+    console.log("⚠️  Firebase not configured - Firebase login will be disabled");
+    console.log("   To enable Firebase, set FIREBASE_PRIVATE_KEY, FIREBASE_PROJECT_ID, and FIREBASE_CLIENT_EMAIL");
+  }
+} catch (error) {
+  console.error("❌ Firebase Admin initialization failed:", error.message);
+  console.log("⚠️  Continuing without Firebase - Firebase login will be disabled");
+}
 
 // ✅ Make Firebase globally accessible
-app.set("firebaseAdmin", firebaseAdmin);
+app.set("firebaseAdmin", admin);
 app.set("firebaseInitialized", firebaseInitialized);
 
 // ✅ MongoDB connect and server start
@@ -120,7 +142,6 @@ app.use("/api/wallet", walletRoutes);
 app.use("/api/transactions", transactionRoutes);
 app.use("/api/services", serviceRoutes);
 app.use("/api/data", dataRoutes);
-app.use("/api/notifications", notificationRoutes);
 
 // Initialize server (for non-serverless deployments)
 const startServer = async () => {
